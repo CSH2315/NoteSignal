@@ -8,6 +8,7 @@ interface LoginModalProps {
 
 export function LoginModal({ isOpen, onClose, onSuccess }: LoginModalProps) {
   const [recoveryCode, setRecoveryCode] = useState('');
+  const [pinCode, setPinCode] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -15,7 +16,7 @@ export function LoginModal({ isOpen, onClose, onSuccess }: LoginModalProps) {
     e.preventDefault();
     setError('');
     
-    if (!recoveryCode) return;
+    if (!recoveryCode || pinCode.length !== 4) return;
 
     setLoading(true);
     // TODO: Supabase query to check recovery_code matching
@@ -53,6 +54,21 @@ export function LoginModal({ isOpen, onClose, onSuccess }: LoginModalProps) {
             />
           </div>
 
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              4자리 비밀번호 (PIN)
+            </label>
+            <input
+              type="password"
+              maxLength={4}
+              value={pinCode}
+              onChange={(e) => setPinCode(e.target.value.replace(/[^0-9]/g, ''))}
+              className="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-brand-500 transition-colors text-center tracking-[0.5em] font-mono text-lg"
+              placeholder="숫자 4자리"
+              required
+            />
+          </div>
+
           {error && <p className="text-red-500 text-sm">{error}</p>}
 
           <div className="pt-2 flex gap-3">
@@ -65,7 +81,7 @@ export function LoginModal({ isOpen, onClose, onSuccess }: LoginModalProps) {
             </button>
             <button
               type="submit"
-              disabled={loading || !recoveryCode}
+              disabled={loading || !recoveryCode || pinCode.length !== 4}
               className="flex-1 py-3 bg-brand-500 text-white font-medium rounded-xl hover:bg-brand-600 disabled:opacity-50 transition-colors"
             >
               {loading ? '확인 중...' : '확인'}

@@ -82,9 +82,12 @@ export default function RegisterPage() {
     setShowRecoveryModal(true);
   };
 
-  // After writing down the recovery code
-  const handleRecoveryConfirm = () => {
+  // After writing down the recovery code and setting PIN
+  const handleRecoveryConfirm = (pin: string) => {
     setShowRecoveryModal(false);
+    // TODO: In DB phase, we would update the user row with this `pin` before navigating
+    console.log('User registered with code:', generatedCode, 'and PIN:', pin);
+
     // UUID internally mapped to recovery code for local caching
     setStoreUser(generatedCode, gender as 'male' | 'female');
     navigate('/feed');

@@ -4,11 +4,12 @@ import { useState } from 'react';
 interface RecoveryCodeModalProps {
   isOpen: boolean;
   code: string;
-  onConfirm: () => void;
+  onConfirm: (pin: string) => void;
 }
 
 export function RecoveryCodeModal({ isOpen, code, onConfirm }: RecoveryCodeModalProps) {
   const [copied, setCopied] = useState(false);
+  const [pinCode, setPinCode] = useState('');
 
   if (!isOpen) return null;
 
@@ -43,6 +44,19 @@ export function RecoveryCodeModal({ isOpen, code, onConfirm }: RecoveryCodeModal
           </button>
         </div>
 
+        <div className="bg-gray-50 border border-gray-200 p-4 rounded-xl mb-6">
+          <label className="block text-sm font-bold text-gray-700 mb-2">4자리 비밀번호(PIN) 설정</label>
+          <input
+            type="password"
+            maxLength={4}
+            value={pinCode}
+            onChange={(e) => setPinCode(e.target.value.replace(/[^0-9]/g, ''))}
+            placeholder="숫자 4자리 입력"
+            className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-500 outline-none transition text-center text-lg tracking-[0.5em] font-mono"
+          />
+          <p className="text-xs text-gray-500 mt-2">이 번호는 로그인 시 복구코드와 함께 필요합니다.</p>
+        </div>
+
         <div className="text-xs text-red-500 text-center mb-6 space-y-1">
           <p>⚠️ 2026.03.31 (시즌 종료일)까지 유효합니다.</p>
           <p>⚠️ 절대 타인에게 공유하지 마세요.</p>
@@ -50,8 +64,9 @@ export function RecoveryCodeModal({ isOpen, code, onConfirm }: RecoveryCodeModal
         </div>
 
         <button
-          onClick={onConfirm}
-          className="w-full py-4 bg-gray-900 text-white font-bold rounded-xl hover:bg-black transition-colors"
+          onClick={() => onConfirm(pinCode)}
+          disabled={pinCode.length !== 4}
+          className="w-full py-4 bg-gray-900 text-white font-bold rounded-xl hover:bg-black disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           저장했습니다 (메인으로 이동)
         </button>
