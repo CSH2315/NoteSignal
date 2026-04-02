@@ -3,22 +3,24 @@ import { Check, ChevronRight, X } from 'lucide-react';
 
 interface TermsModalProps {
   isOpen: boolean;
-  onAgree: () => void;
+  onAgree: (marketingAgreed: boolean) => void;
   onClose: () => void;
 }
 
 export function TermsModal({ isOpen, onAgree, onClose }: TermsModalProps) {
   const [privacyAgreed, setPrivacyAgreed] = useState(false);
   const [termsAgreed, setTermsAgreed] = useState(false);
+  const [marketingAgreed, setMarketingAgreed] = useState(false);
   const [detailView, setDetailView] = useState<'privacy' | 'terms' | null>(null);
   const [errorMsg, setErrorMsg] = useState('');
 
   if (!isOpen) return null;
 
   const handleAllAgree = () => {
-    const isAll = privacyAgreed && termsAgreed;
+    const isAll = privacyAgreed && termsAgreed && marketingAgreed;
     setPrivacyAgreed(!isAll);
     setTermsAgreed(!isAll);
+    setMarketingAgreed(!isAll);
     setErrorMsg('');
   };
 
@@ -27,7 +29,7 @@ export function TermsModal({ isOpen, onAgree, onClose }: TermsModalProps) {
       setErrorMsg('서비스를 이용하려면 필수 약관에 모두 동의해 주세요.');
       return;
     }
-    onAgree();
+    onAgree(marketingAgreed);
   };
 
   if (detailView === 'privacy') {
@@ -95,10 +97,10 @@ export function TermsModal({ isOpen, onAgree, onClose }: TermsModalProps) {
             className="flex items-center gap-3 p-4 bg-gray-50 rounded-xl cursor-pointer"
             onClick={handleAllAgree}
           >
-            <div className={`w-6 h-6 rounded-full flex items-center justify-center transition-colors ${privacyAgreed && termsAgreed ? 'bg-brand-500' : 'bg-gray-200'}`}>
+            <div className={`w-6 h-6 rounded-full flex items-center justify-center transition-colors ${privacyAgreed && termsAgreed && marketingAgreed ? 'bg-brand-500' : 'bg-gray-200'}`}>
               <Check className="w-4 h-4 text-white" />
             </div>
-            <span className="font-bold text-gray-900">약관 전체동의</span>
+            <span className="font-bold text-gray-900">전체동의 (선택 포함)</span>
           </div>
 
           <div className="h-px bg-gray-100" />
@@ -133,6 +135,19 @@ export function TermsModal({ isOpen, onAgree, onClose }: TermsModalProps) {
             <button className="p-2 text-gray-400" onClick={() => setDetailView('terms')}>
               <ChevronRight className="w-5 h-5" />
             </button>
+          </div>
+
+          {/* Marketing (Optional) */}
+          <div className="flex items-center justify-between">
+            <div 
+              className="flex items-center gap-3 cursor-pointer"
+              onClick={() => setMarketingAgreed(!marketingAgreed)}
+            >
+              <div className={`w-6 h-6 rounded-full flex items-center justify-center transition-colors ${marketingAgreed ? 'bg-brand-500' : 'border border-gray-300'}`}>
+                {marketingAgreed && <Check className="w-4 h-4 text-white" />}
+              </div>
+              <span className="text-gray-700">(선택) 시즌 오픈 및 알림 수신 동의</span>
+            </div>
           </div>
         </div>
 

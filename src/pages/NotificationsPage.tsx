@@ -1,92 +1,66 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, Bell, Heart, Info, Clock } from 'lucide-react';
+import { ArrowLeft, Bell, Heart, Info, Clock, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useUserStore } from '@/store/useUserStore';
+import { supabase } from '@/lib/supabase';
+import { toast } from 'react-hot-toast';
 
 interface NotificationItem {
   id: string;
-  type: 'picked_me' | 'system';
+  type: string;
   title: string;
   message: string;
-  createdAt: string; // ISO String
-  isNew: boolean;
+  createdAt: string;
+  isRead: boolean;
 }
-
-// === 임시 데이터 생성 ===
-const getMockNotifications = (): NotificationItem[] => {
-  const now = new Date();
-  
-  const minusDays = (days: number) => {
-    const d = new Date(now);
-    d.setDate(d.getDate() - days);
-    return d.toISOString();
-  };
-
-  const minusHours = (hours: number) => {
-    const d = new Date(now);
-    d.setHours(d.getHours() - hours);
-    return d.toISOString();
-  };
-
-  return [
-    {
-      id: 'n_1',
-      type: 'picked_me',
-      title: '누군가 당신의 매력을 발견했어요!',
-      message: '당신의 보관함 남은 쪽지가 1장 차감되었습니다.',
-      createdAt: minusHours(2), // 2시간 전
-      isNew: true,
-    },
-    {
-      id: 'n_2',
-      type: 'system',
-      title: '노트시그널 베타 오픈 안내',
-      message: '당신의 이야기를 쪽지에 담아 새로운 인연을 만들어보세요.',
-      createdAt: minusDays(1), // 1일 전
-      isNew: true,
-    },
-    {
-      id: 'n_3',
-      type: 'picked_me',
-      title: '누군가 당신의 쪽지를 선택했어요.',
-      message: '매력적인 프로필 덕분이에요!',
-      createdAt: minusDays(5), // 5일 전
-      isNew: false,
-    },
-    {
-      id: 'n_4',
-      type: 'system',
-      title: '14일이 지난 오래된 알림 (보이면 안됨)',
-      message: '이 알림은 15일 전 알림이므로 무시되어야 합니다.',
-      createdAt: minusDays(15), // 15일 전
-      isNew: true,
-    }
-  ];
-};
 
 export default function NotificationsPage() {
   const navigate = useNavigate();
+  const { uuid } = useUserStore();
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // 1. 임시 데이터 로드
-    const rawData = getMockNotifications();
+    if (!uuid) {
+      navigate('/');
+      return;
+    }
 
-    // 2. 14일 이내의 데이터만 필터링
-    const now = new Date();
-    const FOURTEEN_DAYS_MS = 14 * 24 * 60 * 60 * 1000;
-    
-    const validNotes = rawData.filter(noti => {
-      const notiDate = new Date(noti.createdAt);
-      return (now.getTime() - notiDate.getTime()) <= FOURTEEN_DAYS_MS;
-    });
+    const fetchNotifications = async () => {
+      try {
+        const { data, error } = await supabase.rpc('get_my_notifications', {
+          p_user_id: uuid
+        });
 
-    // 3. 최신순(내림차순) 정렬
-    const sortedNotes = validNotes.sort((a, b) => {
-      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-    });
+        if (error) throw error;
+        
+        const mappedData = data.map((noti: any) => ({
+          id: noti.id,
+          type: noti.type,
+          title: noti.title,
+          message: noti.message,
+          createdAt: noti.created_at,
+          isRead: noti.is_read
+        }));
 
-    setNotifications(sortedNotes);
-  }, []);
+        setNotifications(mappedData);
+
+        // 알림창에 들어오면 읽음 처리 시도
+        if (mappedData.some((n: any) => !n.isRead)) {
+          await supabase.rpc('mark_notifications_as_read', {
+            p_user_id: uuid
+          });
+        }
+      } catch (error) {
+        console.error('Failed to fetch notifications:', error);
+        toast.error('알림을 불러오는데 실패했습니다.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchNotifications();
+  }, [uuid, navigate]);
 
   // 시간 포맷팅 함수 (예: '2시간 전', '1일 전')
   const formatTimeAgo = (dateStr: string) => {
@@ -133,7 +107,12 @@ export default function NotificationsPage() {
       </div>
 
       <div className="pt-2">
-        {notifications.length === 0 ? (
+        {isLoading ? (
+          <div className="flex flex-col items-center justify-center mt-32">
+            <Loader2 className="w-10 h-10 text-brand-500 animate-spin mb-4" />
+            <p className="text-gray-500 font-medium">알림 로딩 중...</p>
+          </div>
+        ) : notifications.length === 0 ? (
           <div className="flex flex-col items-center justify-center mt-32 px-6 text-center animate-in fade-in">
             <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
               <Bell className="w-8 h-8 text-gray-400" />
@@ -147,15 +126,15 @@ export default function NotificationsPage() {
               <div 
                 key={noti.id} 
                 className={`p-4 flex gap-4 transition-colors relative cursor-pointer
-                  ${noti.isNew ? 'bg-brand-50 hover:bg-brand-100/50' : 'bg-white hover:bg-gray-50'}
+                  ${!noti.isRead ? 'bg-brand-50 hover:bg-brand-100/50' : 'bg-white hover:bg-gray-50'}
                 `}
               >
                 {/* 안 읽은 알림의 경우 뱃지 포인트 점 표시 */}
-                {noti.isNew && (
+                {!noti.isRead && (
                   <div className="absolute top-4 left-2 w-1.5 h-1.5 rounded-full bg-brand-500" />
                 )}
 
-                {getIcon(noti.type)}
+                {getIcon(noti.type as any)}
                 
                 <div className="flex-1 min-w-0 pr-2">
                   <h4 className="text-sm font-bold text-gray-900 mb-1 leading-tight tracking-tight">

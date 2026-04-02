@@ -3,7 +3,10 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useUserStore } from '@/store/useUserStore';
-import { ArrowLeft, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, AlertTriangle, Loader2 } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { supabase } from '@/lib/supabase';
+import { toast } from 'react-hot-toast';
 
 const editProfileSchema = z.object({
   nickname: z.string().min(1, '이름 또는 닉네임을 입력해주세요.').max(10, '최대 10자까지 가능합니다.'),
@@ -39,31 +42,57 @@ type EditProfileFormValues = z.infer<typeof editProfileSchema>;
 
 export default function EditProfilePage() {
   const navigate = useNavigate();
-  const { gender } = useUserStore();
-
-  // TODO: 실제로는 DB에서 가져온 기존 정보를 기본값으로 세팅해야 합니다.
-  const existingMockData: EditProfileFormValues = {
-    nickname: '빛나는고양이',
-    age: 24,
-    gender: 'female',
-    isAgeVisible: true,
-    contactType: 'instagram',
-    contactId: 'shiney_cat_24',
-    mbti: 'ENFP',
-    charm: '항상 밝은 에너지로 주변 사람들을 기분 좋게 해줍니다! 맛집 탐방을 좋아하고 사진을 예쁘게 잘 찍어요.',
-    idealType: '다정하고 배려심이 깊은 사람, 대화가 끊이지 않고 티키타카가 잘 되는 사람이 좋습니다.',
-  };
+  const { uuid, gender } = useUserStore();
+  const [isLoading, setIsLoading] = useState(true);
 
   const {
     register,
     handleSubmit,
     watch,
     setValue,
+    reset,
     formState: { errors, isSubmitting, isDirty },
   } = useForm<EditProfileFormValues>({
     resolver: zodResolver(editProfileSchema),
-    defaultValues: existingMockData,
   });
+
+  useEffect(() => {
+    if (!uuid) {
+      navigate('/');
+      return;
+    }
+
+    const fetchProfile = async () => {
+      try {
+        const { data, error } = await supabase.rpc('get_my_profile', {
+          p_user_id: uuid
+        });
+
+        if (error) throw error;
+        if (data && data.length > 0) {
+          const profile = data[0];
+          reset({
+            nickname: profile.nickname,
+            age: profile.age,
+            isAgeVisible: profile.is_age_visible,
+            contactType: profile.contact_type,
+            contactId: profile.contact_id,
+            mbti: profile.mbti,
+            charm: profile.charm,
+            idealType: profile.ideal_type,
+          });
+        }
+      } catch (error) {
+        console.error('Failed to fetch profile:', error);
+        toast.error('프로필 정보를 불러오는데 실패했습니다.');
+        navigate('/profile');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchProfile();
+  }, [uuid, navigate, reset]);
 
   const contactType = watch('contactType');
 
@@ -78,12 +107,42 @@ export default function EditProfilePage() {
   };
 
   const onSubmit = async (data: EditProfileFormValues) => {
-    // Simulate DB Save Call...
-    await new Promise(res => setTimeout(res, 800));
-    console.log('Saved Profile:', data);
-    
-    navigate('/profile');
+    if (!uuid) return;
+
+    try {
+      const { data: result, error } = await supabase.rpc('update_my_profile', {
+        p_user_id: uuid,
+        p_nickname: data.nickname,
+        p_age: data.age,
+        p_is_age_visible: data.isAgeVisible,
+        p_contact_type: data.contactType,
+        p_contact_id: data.contactId,
+        p_mbti: data.mbti,
+        p_charm: data.charm,
+        p_ideal_type: data.idealType
+      });
+
+      if (error) throw error;
+      if (result && result.success === false) {
+        throw new Error(result.reason || '수정 실패');
+      }
+
+      toast.success('프로필이 수정되었습니다.');
+      navigate('/profile');
+    } catch (error) {
+      console.error('Failed to update profile:', error);
+      toast.error('프로필 수정 중 오류가 발생했습니다.');
+    }
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-white">
+        <Loader2 className="w-10 h-10 text-brand-500 animate-spin mb-4" />
+        <p className="text-gray-500 font-medium">프로필 정보 불러오는 중...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-white flex flex-col pt-4 pb-20 animate-in slide-in-from-right-4 duration-300">
@@ -154,14 +213,14 @@ export default function EditProfilePage() {
               <div className="flex gap-3 mb-3">
                 <button
                   type="button"
-                  onClick={() => { setValue('contactType', 'instagram'); if(existingMockData.contactType !== 'instagram') setValue('contactId', ''); else setValue('contactId', existingMockData.contactId); }}
+                  onClick={() => { setValue('contactType', 'instagram', { shouldDirty: true }); }}
                   className={`flex-1 py-3 rounded-xl font-medium border transition text-sm ${contactType === 'instagram' ? 'bg-[#FAFAFA] border-pink-500 text-pink-600' : 'bg-white border-gray-200 text-gray-400'}`}
                 >
                   Instagram
                 </button>
                 <button
                   type="button"
-                  onClick={() => { setValue('contactType', 'kakao'); if(existingMockData.contactType !== 'kakao') setValue('contactId', ''); else setValue('contactId', existingMockData.contactId); }}
+                  onClick={() => { setValue('contactType', 'kakao', { shouldDirty: true }); }}
                   className={`flex-1 py-3 rounded-xl font-medium border transition text-sm ${contactType === 'kakao' ? 'bg-[#FEE500] border-yellow-400 text-yellow-900' : 'bg-white border-gray-200 text-gray-400'}`}
                 >
                   KakaoTalk

@@ -2,37 +2,31 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUserStore } from '@/store/useUserStore';
 import { BottomNav } from '@/components/common/BottomNav';
-import { NoteCard, NoteItem } from '@/components/feed/NoteCard';
+import { NoteCard } from '@/components/feed/NoteCard';
 import { PickCompleteModal } from '@/components/feed/PickCompleteModal';
 import { AlertCircle } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
 
-// === 임시 목업 데이터 생성 함수 ===
-const MOCK_MALE_NOTES: NoteItem[] = Array.from({ length: 30 }, (_, i) => ({
-  id: `m_${i}`,
-  nickname: `훈훈한사람${i}`,
-  age: Math.random() > 0.3 ? 20 + Math.floor(Math.random() * 9) : null,
-  mbti: ['ENFJ', 'INFP', 'ISFJ', 'ENTJ'][Math.floor(Math.random() * 4)],
-  charm: '웃는 상이고 항상 주변을 잘 챙겨줍니다. 이야기를 잘 들어줘서 편안하다는 소리를 많이 들어요.',
-  idealType: '대화가 잘 통하고 밝은 성격이었으면 좋겠습니다. 같이 맛집 다니는 걸 좋아해요.',
-  copiesRemaining: Math.floor(Math.random() * 2) + 1, // 1 or 2
-}));
-const MOCK_FEMALE_NOTES: NoteItem[] = Array.from({ length: 30 }, (_, i) => ({
-  id: `f_${i}`,
-  nickname: `다정한고양이${i}`,
-  age: 20 + Math.floor(Math.random() * 9),
-  mbti: ['ISTP', 'ESFP', 'ENFP', 'INTJ'][Math.floor(Math.random() * 4)],
-  charm: '요리를 잘하고 책임감이 강합니다. 취미로 런닝을 꾸준히 하고 있어서 체력도 좋아요!',
-  idealType: '기본적인 예의가 바른 사람, 같이 있을 때 배울 점이 많은 사람이 이상형입니다.',
-  copiesRemaining: Math.floor(Math.random() * 2) + 1, // 1 or 2
-}));
-// =================================
+// DB에서 받아올 RPC 반환 타입 수동 지정 (database.types.ts 업데이트 전 임시)
+type PublicFeedNote = {
+  id: string;
+  nickname: string;
+  age: number | null;
+  mbti: string;
+  charm: string;
+  ideal_type: string;
+  created_at: string;
+  copies_remaining: number;
+  is_picked: boolean;
+};
+
+// MOCK DATA REMOVED
 
 export default function FeedPage() {
   const navigate = useNavigate();
-  // TODO: 실제로는 DB 연동 후 UserStore에서 본인의 gender, picksRemaining 등을 가져와야 합니다.
-  const { gender: myGender, picksRemaining, decrementPicks } = useUserStore();
+  const { uuid, gender: myGender, picksRemaining, decrementPicks } = useUserStore();
   
-  const [notes, setNotes] = useState<NoteItem[]>([]);
+  const [notes, setNotes] = useState<PublicFeedNote[]>([]);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
@@ -42,37 +36,60 @@ export default function FeedPage() {
   // 모달 제어 상태
   const [isCompleteModalOpen, setIsCompleteModalOpen] = useState(false);
   const [recentPickedCount, setRecentPickedCount] = useState(0);
+  const [recentFailedCount, setRecentFailedCount] = useState(0);
 
   // 무한 스크롤 참조용 (옵저버 타겟)
   const observerTarget = useRef<HTMLDivElement>(null);
 
-  // 쪽지 로드 함수 (최신순 10개씩 페이징 로드 시뮬레이션)
+  // 쪽지 로드 함수 (최신순 10개씩 페이징 로드)
   const loadMoreNotes = useCallback(async () => {
-    if (isLoading || !hasMore || picksRemaining <= 0) return;
+    if (isLoading || !hasMore || picksRemaining <= 0 || !myGender) return;
     setIsLoading(true);
 
-    // 실제로는 Supabase에서 page 기준으로 limit(10) 조회
-    await new Promise((res) => setTimeout(res, 600));
+    try {
+      const targetGender = myGender === 'male' ? 'female' : 'male';
+      const startIndex = (page - 1) * 10;
+      
+      const { data, error } = await supabase
+        .rpc('get_feed_notes', {
+          p_gender: targetGender,
+          p_limit: 10,
+          p_offset: startIndex,
+          p_viewer_id: uuid
+        });
 
-    const targetPool = myGender === 'male' ? MOCK_FEMALE_NOTES : MOCK_MALE_NOTES;
-    const startIndex = (page - 1) * 10;
-    const endIndex = startIndex + 10;
-    
-    const newNotes = targetPool.slice(startIndex, endIndex);
+      if (error) throw error;
 
-    if (newNotes.length > 0) {
-      setNotes((prev) => [...prev, ...newNotes]);
-      setPage((prev) => prev + 1);
-    } else {
-      setHasMore(false);
+      if (data && data.length > 0) {
+        setNotes((prev) => {
+          // 중복 제거 방어로직
+          const existingIds = new Set(prev.map(p => p.id));
+          const uniqueData = data.filter((d: any) => !existingIds.has(d.id));
+          return [...prev, ...uniqueData];
+        });
+        
+        // 페이지는 무조건 증가 (다음 페이지 확인을 위해)
+        setPage((prev) => prev + 1);
+
+        // 가져온 데이터가 10개보다 적으면 더 이상 남은 쪽지가 없음을 의미함
+        if (data.length < 10) {
+          setHasMore(false);
+        }
+      } else {
+        // 데이터가 아예 안 온 경우 (또는 10의 배수로 끝난 후 다음 0개 요청 시)
+        setHasMore(false);
+      }
+    } catch (err) {
+      console.error('Failed to load notes', err);
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
   }, [page, isLoading, hasMore, myGender, picksRemaining]);
 
   // Intersection Observer 설정 (스크롤이 바닥 근처에 닿으면 다음 페이지 로드)
   useEffect(() => {
     const observer = new IntersectionObserver(
-      (entries) => {
+      (entries: IntersectionObserverEntry[]) => {
         if (entries[0].isIntersecting) {
           loadMoreNotes();
         }
@@ -88,8 +105,11 @@ export default function FeedPage() {
   }, [loadMoreNotes]);
 
   // 선택 로직 (토글 및 여러 개 선택)
-  const handleSelect = (id: string) => {
-    // 이미 선택되어 있으면 선택 해제 (기회와 무관하게 언제든 취소 가능)
+  const handleSelect = (id: string, isPicked?: boolean) => {
+    // 이미 서버상에 기록이 있는 즉, 과거에 내가 뽑은 쪽지는 클릭조차 불가
+    if (isPicked) return;
+
+    // 이미 (현재 UI 상에서) 선택되어 있으면 선택 해제 (기회와 무관하게 언제든 취소 가능)
     if (selectedNoteIds.includes(id)) {
       setSelectedNoteIds((prev) => prev.filter(noteId => noteId !== id));
       return;
@@ -105,7 +125,7 @@ export default function FeedPage() {
     setSelectedNoteIds((prev) => [...prev, id]);
   };
 
-  // 신고 기능 대기 함수 (스프린트 2에서 모달 연결)
+  // 신고 기능 대기 함수
   const handleReport = (id: string) => {
     alert(`[스프린트2 예정] 쪽지 고유번호: ${id}\n이 쪽지를 신고하는 화면(모달)이 열리게 됩니다.`);
   };
@@ -113,19 +133,42 @@ export default function FeedPage() {
   // 선택하기 액션 (DB 횟수 차감 및 쪽지함 이동)
   const handlePickConfirmed = async () => {
     if (selectedNoteIds.length === 0 || picksRemaining < selectedNoteIds.length) return;
-    
-    // TODO: 실제로는 선택한 ID들을 DB의 Picks 테이블에 Insert 해야 함
-    const count = selectedNoteIds.length;
-    decrementPicks(count);
-    
-    // 애니메이션 렌더링을 위해 모달 띄우기
-    setRecentPickedCount(count);
-    setIsCompleteModalOpen(true);
+    setIsLoading(true);
 
-    // 2초 뒤 보관함으로 이동
-    setTimeout(() => {
-      navigate('/inventory'); 
-    }, 2000);
+    try {
+      const { data, error } = await supabase.rpc('execute_picks', {
+        p_note_ids: selectedNoteIds,
+        p_picker_id: uuid
+      });
+
+      if (error) throw error;
+
+      // data 구조: { success_count: number, results: [{ note_id, status, reason }] }
+      const successCount = data.success_count || 0;
+      const failedCount = selectedNoteIds.length - successCount;
+      
+      // 결과 상관없이 일단 모달은 띄움. (일부 실패했을 수도 있음)
+      if (successCount > 0) {
+        decrementPicks(successCount);
+      }
+      
+      setRecentPickedCount(successCount);
+      setRecentFailedCount(failedCount);
+      setIsCompleteModalOpen(true);
+
+      // 실패한 건이 있다면 읽어볼 시간을 위해 3초 대기, 전부 성공했다면 2초 대기 후 이동
+      setTimeout(() => {
+        setIsCompleteModalOpen(false);
+        navigate('/inventory'); 
+      }, failedCount > 0 ? 3000 : 2000);
+
+    } catch (err: any) {
+      console.error('Pick execution failed', err);
+      alert('쪽지 선택 중 오류가 발생했습니다. 다시 시도해 주세요.');
+    } finally {
+      setIsLoading(false);
+      setSelectedNoteIds([]);
+    }
   };
 
   // 남은 횟수가 0일 때의 화면 (Zero State)
@@ -157,17 +200,40 @@ export default function FeedPage() {
   return (
     <div className="min-h-screen bg-gray-50 pb-28 pt-4">
       {/* 2열 레이아웃을 위한 Masonry 스타일 컨테이너 */}
-      <div className="px-4 columns-2 gap-4 space-y-4">
-        {notes.map((note) => (
-          <NoteCard
-            key={note.id}
-            note={note}
-            isSelected={selectedNoteIds.includes(note.id)}
-            onSelect={handleSelect}
-            onReport={handleReport}
-          />
-        ))}
-      </div>
+      {notes.length === 0 && !isLoading ? (
+        <div className="flex flex-col items-center justify-center pt-24 px-6 text-center">
+          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-6">
+            <span className="text-3xl">🍃</span>
+          </div>
+          <h2 className="text-xl font-bold text-gray-900 mb-2">아직 피드가 조용하네요</h2>
+          <p className="text-gray-500 max-w-[280px]">
+            회원님의 조건에 맞는 새로운 쪽지가 아직 등록되지 않았어요. 조금만 기다려주세요!
+          </p>
+        </div>
+      ) : (
+        <div className="px-4 columns-2 gap-4 space-y-4">
+          {notes.map((note) => (
+            note.id && (
+              <NoteCard
+                key={note.id}
+                note={{
+                  id: note.id,
+                  nickname: note.nickname || '익명',
+                  age: note.age,
+                  mbti: note.mbti || 'N/A',
+                  charm: note.charm || '',
+                  idealType: note.ideal_type || '',
+                  copiesRemaining: note.copies_remaining || 0,
+                  isPicked: note.is_picked || false
+                }}
+                isSelected={selectedNoteIds.includes(note.id)}
+                onSelect={(id) => handleSelect(id, note.is_picked)}
+                onReport={handleReport}
+              />
+            )
+          ))}
+        </div>
+      )}
 
       {/* 로딩 표시기 / 옵저버 타겟 */}
       <div ref={observerTarget} className="h-20 flex items-center justify-center mt-4">
@@ -176,10 +242,11 @@ export default function FeedPage() {
         )}
       </div>
 
-      {/* 선택 완료 모달 (2초 후 자동 이동) */}
+      {/* 선택 완료 모달 (자동 이동) */}
       <PickCompleteModal 
         isOpen={isCompleteModalOpen} 
         pickedCount={recentPickedCount} 
+        failedCount={recentFailedCount}
         remainingPicks={picksRemaining} 
       />
 

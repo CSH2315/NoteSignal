@@ -2,8 +2,7 @@ import { Box, ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { InventoryNoteCard } from '@/components/inventory/InventoryNoteCard';
 
-// === 임시 데이터 타입 및 목업 ===
-interface InventoryNoteItem {
+export interface InventoryNoteItem {
   id: string;
   nickname: string;
   age: number | null;
@@ -15,36 +14,71 @@ interface InventoryNoteItem {
   pickedAt: string;
 }
 
-const MOCK_INVENTORY_NOTES: InventoryNoteItem[] = [
-  {
-    id: `i_1`,
-    nickname: `훈훈한사람`,
-    age: 24,
-    mbti: 'ENFJ',
-    charm: '웃는 상이고 항상 주변을 잘 챙겨줍니다. 이야기를 잘 들어줘서 편안하다는 소리를 많이 들어요.',
-    idealType: '대화가 잘 통하고 밝은 성격이었으면 좋겠습니다. 같이 맛집 다니는 걸 좋아해요.',
-    contactType: 'instagram',
-    contactId: 'hunhun_smile',
-    pickedAt: '2026-03-04T10:00:00Z',
-  },
-  {
-    id: `i_2`,
-    nickname: `다정한고양이`,
-    age: null,
-    mbti: 'ISTP',
-    charm: '요리를 잘하고 책임감이 강합니다.',
-    idealType: '기본적인 예의가 바른 사람, 같이 있을 때 배울 점이 많은 사람이 이상형입니다.',
-    contactType: 'kakao',
-    contactId: 'cat_lover_99',
-    pickedAt: '2026-03-04T11:30:00Z',
-  }
-];
-// =================================
+import { useState, useEffect } from 'react';
+import { supabase } from '@/lib/supabase';
+import { useUserStore } from '@/store/useUserStore';
+
+type PickRecord = {
+  id: string;
+  picked_snapshot: any;
+  created_at: string;
+};
 
 export default function InventoryPage() {
   const navigate = useNavigate();
-  // TODO: 실제로는 DB에서 내가 '선택한(picked)' 상대방들의 쪽지(+연락처)를 모두 가져와야 합니다.
-  const myPickedNotes = MOCK_INVENTORY_NOTES;
+  const { uuid } = useUserStore();
+  const [myPickedNotes, setMyPickedNotes] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchInventory = async () => {
+      if (!uuid) {
+        setIsLoading(false);
+        return;
+      }
+      setIsLoading(true);
+      try {
+        const { data, error } = await supabase
+          .rpc('get_my_picks', {
+            p_picker_id: uuid
+          });
+
+        if (error) throw error;
+        
+        if (data) {
+          // JSONB 스냅샷 원본 데이터를 꺼내서 컴포넌트 프롭스 규격에 맞게 매핑
+          const formatted = data.map((d: PickRecord) => {
+            const snap: any = d.picked_snapshot;
+            return {
+              id: d.id, // picks table ID
+              nickname: snap.nickname,
+              age: snap.is_age_visible ? snap.age : null,
+              mbti: snap.mbti,
+              charm: snap.charm,
+              idealType: snap.ideal_type,
+              contactType: snap.contact_type,
+              contactId: snap.contact_id,
+              pickedAt: d.created_at,
+            };
+          });
+          setMyPickedNotes(formatted);
+        }
+      } catch (err) {
+        console.error('Failed to load inventory', err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchInventory();
+  }, [uuid]);
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center min-h-[80vh]">
+        <div className="w-8 h-8 border-4 border-brand-500 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
 
   if (myPickedNotes.length === 0) {
     return (
@@ -82,7 +116,7 @@ export default function InventoryPage() {
       </div>
 
       <div className="space-y-4">
-        {myPickedNotes.map((note) => (
+        {myPickedNotes.map((note: InventoryNoteItem) => (
           <InventoryNoteCard key={note.id} note={note} />
         ))}
       </div>
