@@ -1,17 +1,7 @@
 import { Instagram, MessageCircle, Copy, Check } from 'lucide-react';
 import { useState } from 'react';
 
-interface InventoryNoteItem {
-  id: string;
-  nickname: string;
-  age: number | null;
-  mbti: string;
-  charm: string;
-  idealType: string;
-  contactType: 'instagram' | 'kakao';
-  contactId: string;
-  pickedAt: string;
-}
+import { InventoryNoteItem } from '@/pages/InventoryPage';
 
 export function InventoryNoteCard({ note }: { note: InventoryNoteItem }) {
   const [copied, setCopied] = useState(false);

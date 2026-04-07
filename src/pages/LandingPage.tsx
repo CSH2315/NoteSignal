@@ -87,7 +87,7 @@ export default function LandingPage() {
               className="w-full px-5 py-4 bg-white text-gray-700 rounded-2xl hover:bg-gray-50 active:scale-95 transition-all border border-gray-200 shadow-sm flex items-center justify-center space-x-1"
             >
               <span className="text-sm font-medium text-gray-500">이번 시즌에 이미 등록하셨나요?</span>
-              <span className="text-sm font-bold text-brand-500 whitespace-nowrap">쪽지 이어보기</span>
+              <span className="text-sm font-bold text-brand-500 whitespace-nowrap">쪽지 재등록/이어보기</span>
             </button>
           </div>
         </motion.div>

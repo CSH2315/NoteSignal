@@ -8,6 +8,7 @@ export interface NoteItem {
   charm: string;
   idealType: string;
   copiesRemaining: number;
+  isPicked?: boolean;
 }
 
 interface NoteCardProps {
@@ -20,11 +21,13 @@ interface NoteCardProps {
 export function NoteCard({ note, isSelected, onSelect, onReport }: NoteCardProps) {
   return (
     <div 
-      onClick={() => onSelect(note.id)}
+      onClick={() => { if (!note.isPicked) onSelect(note.id); }}
       className={`relative w-full rounded-3xl p-5 cursor-pointer transition-all duration-300 break-inside-avoid shadow-sm
-        ${isSelected 
-          ? 'bg-brand-50 border-2 border-brand-500 scale-[0.98]' 
-          : 'bg-white border border-gray-100 hover:shadow-md hover:-translate-y-1'
+        ${note.isPicked 
+          ? 'bg-gray-50 border-gray-200 opacity-60 cursor-not-allowed'
+          : isSelected 
+            ? 'bg-brand-50 border-2 border-brand-500 scale-[0.98]' 
+            : 'bg-white border border-gray-100 hover:shadow-md hover:-translate-y-1'
         }
       `}
       style={{ marginBottom: '1rem' }}
@@ -49,12 +52,18 @@ export function NoteCard({ note, isSelected, onSelect, onReport }: NoteCardProps
           )}
         </div>
         <div className="flex items-center gap-2 mt-2">
-          <span className="inline-block px-2 py-0.5 bg-gray-100 text-gray-600 text-xs font-bold rounded-lg uppercase tracking-wider">
+          <span className={`inline-block px-2 py-0.5 text-xs font-bold rounded-lg uppercase tracking-wider ${note.isPicked ? 'bg-gray-200 text-gray-400' : 'bg-gray-100 text-gray-600'}`}>
             {note.mbti}
           </span>
-          <span className="inline-block px-2 py-0.5 bg-red-50 text-red-500 text-xs font-bold rounded-lg tracking-wider">
-            남은 쪽지: {note.copiesRemaining}장
-          </span>
+          {note.isPicked ? (
+            <span className="inline-block px-2 py-0.5 bg-gray-200 text-gray-500 text-xs font-bold rounded-lg tracking-wider">
+              이미 선택함
+            </span>
+          ) : (
+            <span className="inline-block px-2 py-0.5 bg-red-50 text-red-500 text-xs font-bold rounded-lg tracking-wider">
+              남은 쪽지: {note.copiesRemaining}장
+            </span>
+          )}
         </div>
       </div>
 

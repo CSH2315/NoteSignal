@@ -1,4 +1,7 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/lib/supabase';
+import { useUserStore } from '@/store/useUserStore';
 
 interface LoginModalProps {
   isOpen: boolean;
@@ -11,6 +14,9 @@ export function LoginModal({ isOpen, onClose, onSuccess }: LoginModalProps) {
   const [pinCode, setPinCode] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+
+  const setStoreUser = useUserStore(state => state.login);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -19,16 +25,41 @@ export function LoginModal({ isOpen, onClose, onSuccess }: LoginModalProps) {
     if (!recoveryCode || pinCode.length !== 4) return;
 
     setLoading(true);
-    // TODO: Supabase query to check recovery_code matching
-    // Simulate DB delay
-    await new Promise((res) => setTimeout(res, 800));
     
-    // Placeholder logic - mock fail for demonstration
-    // setError('복구 아이디가 존재하지 않습니다. (DB 연동 전 임시 에러)');
-    // setLoading(false);
-    
-    // For now, to test flow:
-    onSuccess();
+    try {
+      const { data, error: rpcError } = await supabase.rpc('verify_login', {
+        p_login_id: recoveryCode,
+        p_pin_code: pinCode
+      });
+
+      if (rpcError) throw rpcError;
+
+      if (data && data.success) {
+        setStoreUser(data.user_id, data.gender, data.picks_remaining, data.my_note_copies);
+        onSuccess();
+      } else if (data && data.needs_reregistration) {
+        // 쪽지 삭제 상태인 유저에게 재등록 여부를 묻고 /register 로 보냄
+        const confirmRestore = window.confirm(data.reason);
+        if (confirmRestore) {
+          onSuccess(); // 모달 닫기
+          navigate('/register', { 
+            state: { 
+              restoreUserId: data.user_id, 
+              restoreLoginId: data.login_id,
+              restoreGender: data.gender
+            } 
+          });
+        }
+      } else {
+        // 백엔드 RPC에서 내려준 상세/통일된 에러 메시지 그대로 노출
+        setError(data?.reason || '복구 아이디 또는 4자리 PIN 번호가 올바르지 않습니다.');
+      }
+    } catch (err: any) {
+      console.error('Login Error:', err);
+      setError('서버와 통신 중 문제가 발생했습니다. 잠시 후 시도해주세요.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (!isOpen) return null;
