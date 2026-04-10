@@ -4,16 +4,17 @@ CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 -- 2. 기본 테이블(Tables) 생성
 -------------------------------------------------
-CREATE TABLE public.system_settings (
+CREATE TABLE IF NOT EXISTS public.system_settings (
   key TEXT PRIMARY KEY,
   status TEXT NOT NULL,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
 -- 초기 시즌 상태값 세팅
-INSERT INTO public.system_settings (key, status) VALUES ('season_status', 'pending');
+INSERT INTO public.system_settings (key, status) VALUES ('season_status', 'pending')
+ON CONFLICT (key) DO NOTHING;
 
-CREATE TABLE public.users (
+CREATE TABLE IF NOT EXISTS public.users (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   login_id TEXT UNIQUE,               -- 예: ABCD-1234 (시즌 초기화 시 NULL 처리)
   pin_code TEXT,                      -- Bcrypt 해싱된 4자리 PIN 저장 (시즌 초기화 시 NULL 처리)
@@ -27,7 +28,7 @@ CREATE TABLE public.users (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
-CREATE TABLE public.notes (
+CREATE TABLE IF NOT EXISTS public.notes (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   user_id UUID REFERENCES public.users(id) ON DELETE CASCADE UNIQUE NOT NULL,
   nickname TEXT NOT NULL,
@@ -44,7 +45,9 @@ CREATE TABLE public.notes (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
-CREATE TABLE public.picks (
+CREATE INDEX IF NOT EXISTS idx_notes_feed ON public.notes(is_active, gender, created_at DESC);
+
+CREATE TABLE IF NOT EXISTS public.picks (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   picker_id UUID REFERENCES public.users(id) ON DELETE CASCADE NOT NULL,
   picked_id UUID REFERENCES public.users(id) ON DELETE CASCADE NOT NULL,
@@ -53,7 +56,7 @@ CREATE TABLE public.picks (
   UNIQUE(picker_id, picked_id)        -- 같은 상대를 2번 뽑을 수 없음
 );
 
-CREATE TABLE public.notifications (
+CREATE TABLE IF NOT EXISTS public.notifications (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   user_id UUID REFERENCES public.users(id) ON DELETE CASCADE NOT NULL,
   type TEXT NOT NULL,
@@ -64,6 +67,7 @@ CREATE TABLE public.notifications (
 );
 
 -- 회원가입 시 성별에 따라 기본 picks_remaining 자동 부여 (트리거)
+DROP FUNCTION IF EXISTS public.set_default_picks_remaining() CASCADE;
 CREATE OR REPLACE FUNCTION public.set_default_picks_remaining()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -78,6 +82,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS trg_set_default_picks ON public.users CASCADE;
 CREATE TRIGGER trg_set_default_picks
 BEFORE INSERT ON public.users
 FOR EACH ROW
@@ -85,6 +90,7 @@ EXECUTE FUNCTION public.set_default_picks_remaining();
 
 -- 3. 안전한 메인 피드 로드를 위한 RPC (View 대신 RPC로 RLS 우회)
 -------------------------------------------------
+DROP FUNCTION IF EXISTS public.get_feed_notes(TEXT, INT, INT, UUID) CASCADE;
 CREATE OR REPLACE FUNCTION public.get_feed_notes(
   p_gender TEXT, 
   p_limit INT DEFAULT 10, 
@@ -133,6 +139,7 @@ $$;
 
 -- 4. Race Condition을 완벽히 방어하는 쪽지 다중 선택 RPC 함수
 -------------------------------------------------
+DROP FUNCTION IF EXISTS public.execute_picks(UUID[], UUID) CASCADE;
 CREATE OR REPLACE FUNCTION public.execute_picks(p_note_ids UUID[], p_picker_id UUID)
 RETURNS JSONB
 LANGUAGE plpgsql
@@ -243,6 +250,7 @@ ALTER TABLE public.picks ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
 
 -- 전역/익명 및 기본 보안 정책 세팅
+DROP POLICY IF EXISTS "Enable Read Access for Anyone" ON public.system_settings CASCADE;
 CREATE POLICY "Enable Read Access for Anyone" ON public.system_settings FOR SELECT USING (true);
 
 -- API를 통한 DB 직접 조회 방어: Custom Auth를 사용하므로 auth.uid()를 사용할 수 없음
@@ -251,6 +259,7 @@ CREATE POLICY "Enable Read Access for Anyone" ON public.system_settings FOR SELE
 
 -- 6. 기타 Custom Auth 조회용 RPC
 -------------------------------------------------
+DROP FUNCTION IF EXISTS public.get_my_picks(UUID) CASCADE;
 CREATE OR REPLACE FUNCTION public.get_my_picks(p_picker_id UUID)
 RETURNS TABLE (
   id UUID,
@@ -270,6 +279,7 @@ END;
 $$;
 -- 7. 내 프로필 조회를 위한 RPC
 -------------------------------------------------
+DROP FUNCTION IF EXISTS public.get_my_profile(UUID) CASCADE;
 CREATE OR REPLACE FUNCTION public.get_my_profile(p_user_id UUID)
 RETURNS TABLE (
   nickname TEXT,
@@ -304,6 +314,7 @@ $$;
 
 -- 8. 내 프로필 삭제(Soft Delete)를 위한 RPC
 -------------------------------------------------
+DROP FUNCTION IF EXISTS public.delete_my_profile(UUID) CASCADE;
 CREATE OR REPLACE FUNCTION public.delete_my_profile(p_user_id UUID)
 RETURNS JSONB
 LANGUAGE plpgsql
@@ -324,6 +335,7 @@ $$;
 
 -- 9. 내 프로필 수정을 위한 RPC
 -------------------------------------------------
+DROP FUNCTION IF EXISTS public.update_my_profile(UUID, TEXT, INTEGER, BOOLEAN, TEXT, TEXT, TEXT, TEXT, TEXT) CASCADE;
 CREATE OR REPLACE FUNCTION public.update_my_profile(
   p_user_id UUID,
   p_nickname TEXT,
@@ -364,6 +376,7 @@ $$;
 
 -- 10. 내 알림 조회를 위한 RPC (최근 14일치)
 -------------------------------------------------
+DROP FUNCTION IF EXISTS public.get_my_notifications(UUID) CASCADE;
 CREATE OR REPLACE FUNCTION public.get_my_notifications(p_user_id UUID)
 RETURNS TABLE (
   id UUID,
@@ -394,6 +407,7 @@ $$;
 
 -- 11. 알림 읽음 처리를 위한 RPC
 -------------------------------------------------
+DROP FUNCTION IF EXISTS public.mark_notifications_as_read(UUID) CASCADE;
 CREATE OR REPLACE FUNCTION public.mark_notifications_as_read(p_user_id UUID)
 RETURNS VOID
 LANGUAGE plpgsql
@@ -408,6 +422,7 @@ $$;
 
 -- 12. 유저 상태 검증 및 동기화 (Zombie Session Protection)
 -------------------------------------------------
+DROP FUNCTION IF EXISTS public.get_user_status(UUID) CASCADE;
 CREATE OR REPLACE FUNCTION public.get_user_status(p_uuid UUID)
 RETURNS JSONB
 LANGUAGE plpgsql

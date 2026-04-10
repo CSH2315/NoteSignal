@@ -26,10 +26,14 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
           // 정상 세션: 최신 잔여 횟수 등으로 동기화
           updateStatus(data.picks_remaining, data.my_note_copies);
         }
-      } catch (err) {
-        // 네트워크 에러 등으로 실패 시 안전하게 로그아웃
-        logout();
-        navigate('/', { replace: true });
+      } catch (err: any) {
+        // 네트워크 에러 시 강제 로그아웃 금지 (Offline 방어)
+        if (err?.message === 'Failed to fetch' || err?.message?.includes('NetworkError')) {
+          console.warn('네트워크 통신 중단: 세션을 유지합니다.');
+        } else {
+          logout();
+          navigate('/', { replace: true });
+        }
       } finally {
         setIsValidating(false);
       }

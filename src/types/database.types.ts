@@ -1,4 +1,4 @@
-﻿export type Json =
+export type Json =
   | string
   | number
   | boolean
@@ -237,7 +237,7 @@ export type Database = {
       }
     }
     Functions: {
-      execute_picks: { Args: { p_note_ids: string[] }; Returns: Json }
+      execute_picks: { Args: { p_note_ids: string[], p_picker_id: string }; Returns: Json }
     }
     Enums: {
       [_ in never]: never

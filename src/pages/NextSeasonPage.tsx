@@ -10,7 +10,7 @@ export default function NextSeasonPage() {
       </p>
       <div className="p-6 bg-white rounded-2xl border border-gray-100 shadow-sm w-full max-w-sm">
         <p className="text-sm font-medium text-gray-400 mb-1">다음 시즌 안내</p>
-        <p className="text-lg font-bold text-gray-900">2026.04.01 오픈 예정</p>
+        <p className="text-lg font-bold text-gray-900">2026.05.01 오픈 예정</p>
       </div>
     </div>
   );

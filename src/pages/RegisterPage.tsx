@@ -129,9 +129,12 @@ export default function RegisterPage() {
         // 2. 가입 완료 시 브라우저에 20일짜리 제한 쿠키 발급 (max-age = 60 * 60 * 24 * 20)
         document.cookie = "ns_device_id=registered; max-age=1728000; path=/";
 
-        // Set User Store with response values matching the new signature
-        // Assuming male=2, female=4 are the initial defaults as handled by the trigger
-        setStoreUser(data.user_id, formData.gender as 'male' | 'female', formData.gender === 'female' ? 4 : 2, 2);
+        // 서버에 등록된 DB 트리거(picks) 기본값 조회
+        const { data: statusData } = await supabase.rpc('get_user_status', { p_uuid: data.user_id });
+        const picks = statusData?.picks_remaining ?? (formData.gender === 'female' ? 4 : 2);
+        const copies = statusData?.my_note_copies ?? 2;
+
+        setStoreUser(data.user_id, formData.gender as 'male' | 'female', picks, copies);
         toast.success('쪽지가 등록되었습니다!');
         navigate('/feed', { replace: true });
       } else {

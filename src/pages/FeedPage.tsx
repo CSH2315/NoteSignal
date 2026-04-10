@@ -84,7 +84,7 @@ export default function FeedPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [page, isLoading, hasMore, myGender, picksRemaining]);
+  }, [page, isLoading, hasMore, myGender, picksRemaining, uuid]);
 
   // Intersection Observer 설정 (스크롤이 바닥 근처에 닿으면 다음 페이지 로드)
   useEffect(() => {

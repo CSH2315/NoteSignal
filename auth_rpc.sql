@@ -22,6 +22,7 @@ ALTER TABLE public.ip_rate_limits ENABLE ROW LEVEL SECURITY;
 -- ==========================================================
 -- 2. 로그인 검증 RPC (IP Rate Limiting + 계정 잠금 + Timing Attack 방어)
 -- ==========================================================
+DROP FUNCTION IF EXISTS public.verify_login(TEXT, TEXT) CASCADE;
 CREATE OR REPLACE FUNCTION public.verify_login(p_login_id TEXT, p_pin_code TEXT)
 RETURNS JSONB
 LANGUAGE plpgsql
@@ -98,8 +99,8 @@ BEGIN
     -- 쪽지 생존 상태 확인
     SELECT is_active INTO v_is_active FROM public.notes WHERE user_id = v_user_record.id;
     
-    IF NOT v_is_active THEN
-      -- 쪽지 삭제 유저 -> 재등록 권유 데이터 반환
+    IF v_is_active IS NULL OR v_is_active = false THEN
+      -- 쪽지 삭제 유저 또는 쪽지 데이터가 없는 유저 -> 재등록 권유 데이터 반환
       RETURN jsonb_build_object(
         'success', false, 
         'needs_reregistration', true, 
@@ -141,6 +142,7 @@ $$;
 -- ==========================================================
 -- 3. 회원가입 및 쪽지 등록 원자적 처리 (프론트에서 평문 던지면 여기서 Hashing)
 -- ==========================================================
+DROP FUNCTION IF EXISTS public.register_note(TEXT, TEXT, TEXT, BOOLEAN, TEXT, TEXT, TEXT, INTEGER, BOOLEAN, TEXT, TEXT, TEXT) CASCADE;
 CREATE OR REPLACE FUNCTION public.register_note(
   p_login_id TEXT,
   p_pin_code TEXT,
@@ -193,7 +195,7 @@ BEGIN
   IF v_recent_attempts >= 10 THEN
      -- 10회 초과 시 락 걸기 (30분)
      INSERT INTO public.ip_rate_limits (ip_address, attempts, register_locked_until)
-     VALUES (v_client_ip, 0, 0, now() + interval '30 minutes')
+     VALUES (v_client_ip, 0, now() + interval '30 minutes')
      ON CONFLICT (ip_address) DO UPDATE SET register_locked_until = now() + interval '30 minutes';
      
      RETURN jsonb_build_object('success', false, 'reason', '가입 시도 횟수 초과로 30분간 가입이 차단되었습니다.');
@@ -227,6 +229,7 @@ $$;
 -- ==========================================================
 -- 3-1. 기존 유저 쪽지 복구 (Restore Note)
 -- ==========================================================
+DROP FUNCTION IF EXISTS public.restore_note(UUID, TEXT, TEXT, TEXT, INTEGER, BOOLEAN, TEXT, TEXT, TEXT) CASCADE;
 CREATE OR REPLACE FUNCTION public.restore_note(
   p_user_id UUID,
   p_nickname TEXT,
@@ -244,6 +247,9 @@ AS $$
 DECLARE
   v_user_record RECORD;
 BEGIN
+  -- 유저 정보 조회
+  SELECT * INTO v_user_record FROM public.users WHERE id = p_user_id;
+
   -- 쪽지를 다시 활성화(is_active = true)하고 내용 덮어쓰기
   UPDATE public.notes 
   SET 
@@ -259,8 +265,15 @@ BEGIN
     updated_at = timezone('utc'::text, now())
   WHERE user_id = p_user_id;
 
-  -- 로그인 성공 시 프론트엔드가 필요로 하는 정보들을 반환
-  SELECT * INTO v_user_record FROM public.users WHERE id = p_user_id;
+  IF NOT FOUND THEN
+    INSERT INTO public.notes (
+      user_id, nickname, contact_type, contact_id, gender, 
+      age, is_age_visible, mbti, ideal_type, charm
+    ) VALUES (
+      p_user_id, p_nickname, p_contact_type, p_contact_id, v_user_record.gender,
+      p_age, p_is_age_visible, p_mbti, p_ideal_type, p_charm
+    );
+  END IF;
   
   RETURN jsonb_build_object(
     'success', true,
@@ -273,121 +286,4 @@ END;
 $$;
 
 
--- ==========================================================
--- 4. 내 프로필 조회 RPC (ProfilePage 연동)
--- ==========================================================
-CREATE OR REPLACE FUNCTION public.get_my_profile(p_user_id UUID)
-RETURNS TABLE (
-  nickname TEXT,
-  age INTEGER,
-  gender TEXT,
-  mbti TEXT,
-  contact_type TEXT,
-  contact_id TEXT,
-  charm TEXT,
-  ideal_type TEXT,
-  is_age_visible BOOLEAN
-) 
-LANGUAGE plpgsql 
-SECURITY DEFINER 
-AS $$
-BEGIN
-  RETURN QUERY
-  SELECT n.nickname, n.age, n.gender, n.mbti, n.contact_type, n.contact_id, n.charm, n.ideal_type, n.is_age_visible
-  FROM public.notes n
-  WHERE n.user_id = p_user_id AND n.is_active = true;
-END;
-$$;
 
-
--- ==========================================================
--- 5. 내 프로필 삭제 RPC (ProfilePage 연동 - Soft Delete)
--- ==========================================================
-CREATE OR REPLACE FUNCTION public.delete_my_profile(p_user_id UUID)
-RETURNS JSONB 
-LANGUAGE plpgsql 
-SECURITY DEFINER 
-AS $$
-BEGIN
-  UPDATE public.notes 
-  SET is_active = false, updated_at = now()
-  WHERE user_id = p_user_id;
-  
-  RETURN jsonb_build_object('success', true);
-END;
-$$;
-
-
--- ==========================================================
--- 6. 내 프로필 수정 RPC (EditProfilePage 연동)
--- ==========================================================
-CREATE OR REPLACE FUNCTION public.update_my_profile(
-  p_user_id UUID,
-  p_nickname TEXT,
-  p_age INTEGER,
-  p_is_age_visible BOOLEAN,
-  p_contact_type TEXT,
-  p_contact_id TEXT,
-  p_mbti TEXT,
-  p_charm TEXT,
-  p_ideal_type TEXT
-) RETURNS JSONB 
-LANGUAGE plpgsql 
-SECURITY DEFINER 
-AS $$
-BEGIN
-  UPDATE public.notes 
-  SET 
-    nickname = p_nickname,
-    age = p_age,
-    is_age_visible = p_is_age_visible,
-    contact_type = p_contact_type,
-    contact_id = p_contact_id,
-    mbti = p_mbti,
-    charm = p_charm,
-    ideal_type = p_ideal_type,
-    updated_at = now()
-  WHERE user_id = p_user_id AND is_active = true;
-  
-  RETURN jsonb_build_object('success', true);
-END;
-$$;
-
-
--- ==========================================================
--- 7. 내 알림 목록 조회 RPC (NotificationsPage 연동)
--- ==========================================================
-CREATE OR REPLACE FUNCTION public.get_my_notifications(p_user_id UUID)
-RETURNS TABLE (
-  id UUID,
-  type TEXT,
-  title TEXT,
-  message TEXT,
-  created_at TIMESTAMP WITH TIME ZONE,
-  is_read BOOLEAN
-) LANGUAGE plpgsql SECURITY DEFINER AS $$
-BEGIN
-  RETURN QUERY
-  SELECT n.id, n.type, n.title, n.message, n.created_at, n.is_read
-  FROM public.notifications n
-  WHERE n.user_id = p_user_id
-    AND n.created_at > now() - interval '14 days'
-  ORDER BY n.created_at DESC
-  LIMIT 30;
-END;
-$$;
-
-
--- ==========================================================
--- 8. 알림 읽음 처리 RPC (NotificationsPage 연동)
--- ==========================================================
-CREATE OR REPLACE FUNCTION public.mark_notifications_as_read(p_user_id UUID)
-RETURNS JSONB LANGUAGE plpgsql SECURITY DEFINER AS $$
-BEGIN
-  UPDATE public.notifications
-  SET is_read = true
-  WHERE user_id = p_user_id AND is_read = false;
-  
-  RETURN jsonb_build_object('success', true);
-END;
-$$;

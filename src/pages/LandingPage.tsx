@@ -26,7 +26,11 @@ export default function LandingPage() {
     }
 
     // If no UUID and season is active, show the Landing Page UI
-    setIsChecking(false);
+    const timer = setTimeout(() => {
+      setIsChecking(false);
+    }, 400); // 0.4s delay 최소한의 시간 확보 (화면 깜빡임 방지)
+
+    return () => clearTimeout(timer);
   }, [uuid, navigate]);
 
   if (isChecking) {
