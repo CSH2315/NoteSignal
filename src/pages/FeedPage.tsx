@@ -6,6 +6,7 @@ import { NoteCard } from '@/components/feed/NoteCard';
 import { PickCompleteModal } from '@/components/feed/PickCompleteModal';
 import { AlertCircle } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { useSeasonStore } from '@/store/useSeasonStore';
 
 // DB에서 받아올 RPC 반환 타입 수동 지정 (database.types.ts 업데이트 전 임시)
 type PublicFeedNote = {
@@ -20,11 +21,11 @@ type PublicFeedNote = {
   is_picked: boolean;
 };
 
-// MOCK DATA REMOVED
-
 export default function FeedPage() {
   const navigate = useNavigate();
   const { uuid, gender: myGender, picksRemaining, decrementPicks } = useUserStore();
+  const seasonStatus = useSeasonStore((state) => state.status);
+  
   
   const [notes, setNotes] = useState<PublicFeedNote[]>([]);
   const [page, setPage] = useState(1);
@@ -43,7 +44,7 @@ export default function FeedPage() {
 
   // 쪽지 로드 함수 (최신순 10개씩 페이징 로드)
   const loadMoreNotes = useCallback(async () => {
-    if (isLoading || !hasMore || picksRemaining <= 0 || !myGender) return;
+    if (isLoading || !hasMore || picksRemaining <= 0 || !myGender || seasonStatus === 'pre_registration' || seasonStatus === 'retention') return;
     setIsLoading(true);
 
     try {
@@ -84,7 +85,7 @@ export default function FeedPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [page, isLoading, hasMore, myGender, picksRemaining, uuid]);
+  }, [page, isLoading, hasMore, myGender, picksRemaining, uuid, seasonStatus]);
 
   // Intersection Observer 설정 (스크롤이 바닥 근처에 닿으면 다음 페이지 로드)
   useEffect(() => {
@@ -199,13 +200,38 @@ export default function FeedPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 pb-28 pt-4">
-      {/* 2열 레이아웃을 위한 Masonry 스타일 컨테이너 */}
-      {notes.length === 0 && !isLoading ? (
-        <div className="flex flex-col items-center justify-center pt-24 px-6 text-center">
+      {seasonStatus === 'pre_registration' ? (
+        <div className="flex flex-col items-center justify-center pt-24 px-6 text-center animate-in fade-in zoom-in duration-300">
+          <div className="w-16 h-16 bg-brand-50 rounded-full flex items-center justify-center mb-6 shadow-sm border border-brand-100">
+            <span className="text-3xl animate-bounce">⏰</span>
+          </div>
+          <h2 className="text-xl font-bold text-gray-900 mb-2 tracking-tight">매칭 피드 오픈 대기중!</h2>
+          <p className="text-gray-500 max-w-[280px] leading-relaxed">
+            현재는 사전 등록 기간입니다. 쪽지 등록은 정상적으로 완료되었으며, 다른 사람들의 쪽지는 정식 오픈 시 공개됩니다.
+          </p>
+        </div>
+      ) : seasonStatus === 'retention' ? (
+        <div className="flex flex-col items-center justify-center pt-24 px-6 text-center animate-in fade-in zoom-in duration-300">
+          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-6 shadow-sm">
+            <span className="text-3xl">🏁</span>
+          </div>
+          <h2 className="text-xl font-bold text-gray-900 mb-2 tracking-tight">이번 시즌이 종료되었습니다</h2>
+          <p className="text-gray-500 max-w-[280px] leading-relaxed">
+            새로운 매칭은 더 이상 진행되지 않습니다. 내 쪽지 보관함(인벤토리)에서 매칭 결과를 확인해 보세요!
+          </p>
+          <button
+            onClick={() => navigate('/inventory')}
+            className="mt-8 px-8 py-3 bg-brand-500 text-white font-bold rounded-2xl shadow-lg hover:bg-brand-600 transition"
+          >
+            내 쪽지함 가기
+          </button>
+        </div>
+      ) : notes.length === 0 && !isLoading ? (
+        <div className="flex flex-col items-center justify-center pt-24 px-6 text-center animate-in fade-in zoom-in duration-300">
           <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-6">
             <span className="text-3xl">🍃</span>
           </div>
-          <h2 className="text-xl font-bold text-gray-900 mb-2">아직 피드가 조용하네요</h2>
+          <h2 className="text-xl font-bold text-gray-900 mb-2 tracking-tight">아직 피드가 조용하네요</h2>
           <p className="text-gray-500 max-w-[280px]">
             회원님의 조건에 맞는 새로운 쪽지가 아직 등록되지 않았어요. 조금만 기다려주세요!
           </p>

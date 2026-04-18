@@ -1,10 +1,12 @@
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Archive, Bell } from 'lucide-react';
-import { isSeasonActive } from '@/lib/season';
+import { useSeasonStore } from '@/store/useSeasonStore';
 
 export function Header() {
   const navigate = useNavigate();
   const location = useLocation();
+
+  const seasonStatus = useSeasonStore((state) => state.status);
 
   // 메인 화면과 다음 시즌 안내 화면에서만 보이도록 설정
   const showHeaderPaths = ['/feed', '/next-season'];
@@ -13,10 +15,11 @@ export function Header() {
   }
 
   const handleInventoryClick = () => {
-    if (isSeasonActive() && location.pathname !== '/next-season') {
+    // 쪽지함 열람: active(진행중) 이거나 retention(보존일) 일 때 접근 가능
+    if (seasonStatus === 'active' || seasonStatus === 'retention') {
       navigate('/inventory');
     } else {
-      alert('쪽지함은 시즌 중에만 열람 가능합니다.');
+      alert('쪽지함은 시즌 중이거나 결과 보존 기간에만 열람 가능합니다.');
     }
   };
 

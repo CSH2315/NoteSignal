@@ -9,8 +9,16 @@ import ProfilePage from '@/pages/ProfilePage';
 import EditProfilePage from '@/pages/EditProfilePage';
 import NotificationsPage from '@/pages/NotificationsPage';
 import { ProtectedRoute } from '@/components/common/ProtectedRoute';
+import { useSeasonStore } from '@/store/useSeasonStore';
+import { useEffect } from 'react';
 
 function App() {
+  const fetchCurrentSeason = useSeasonStore(state => state.fetchCurrentSeason);
+
+  useEffect(() => {
+    fetchCurrentSeason();
+  }, [fetchCurrentSeason]);
+
   return (
     <Router>
       <MobileLayout>

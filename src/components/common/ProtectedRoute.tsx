@@ -1,12 +1,19 @@
 import { useEffect, useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { useUserStore } from '@/store/useUserStore';
+import { useSeasonStore } from '@/store/useSeasonStore';
+import { useSeasonRealtime } from '@/hooks/useSeasonRealtime';
 import { supabase } from '@/lib/supabase';
 
 export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { uuid, logout, updateStatus } = useUserStore();
+  const seasonStatus = useSeasonStore((state) => state.status);
+  const setSeasonData = useSeasonStore((state) => state.setSeasonData);
   const [isValidating, setIsValidating] = useState(true);
   const navigate = useNavigate();
+
+  // 오직 인증된 유저(ProtectedRoute 통과자)에게만 실시간 웹소켓 연결
+  useSeasonRealtime();
 
   useEffect(() => {
     if (!uuid) {
@@ -23,7 +30,11 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
           logout();
           navigate('/', { replace: true });
         } else {
-          // 정상 세션: 최신 잔여 횟수 등으로 동기화
+          // 정상 세션: DB의 최신 시즌 상태도 스토어에 동기화
+          if (data.season_status) {
+             // title, startDate, endDate는 fetchCurrentSeason이 관리하므로 status만 갱신
+             setSeasonData(data.season_status as any);
+          }
           updateStatus(data.picks_remaining, data.my_note_copies);
         }
       } catch (err: any) {
@@ -40,7 +51,17 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
     };
 
     checkStatus();
-  }, [uuid, logout, updateStatus, navigate]);
+  }, [uuid, logout, updateStatus, navigate, setSeasonData]);
+
+  // 시즌 상태 강제 리다이렉트 (앱 셧다운 방어 로직)
+  useEffect(() => {
+    if (seasonStatus === 'loading') return;
+
+    if (seasonStatus === 'completed' || seasonStatus === 'scheduled') {
+      navigate('/next-season', { replace: true });
+    }
+    // pre_registration이나 retention일 때는 Route 접근을 허용 (내부 페이지에서 분기)
+  }, [seasonStatus, navigate]);
 
   if (!uuid) {
     return <Navigate to="/" replace />;

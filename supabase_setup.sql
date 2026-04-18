@@ -10,9 +10,23 @@ CREATE TABLE IF NOT EXISTS public.system_settings (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- 초기 시즌 상태값 세팅
+-- 초기 시즌 상태값 세팅 (하위 호환성 유지용)
 INSERT INTO public.system_settings (key, status) VALUES ('season_status', 'pending')
 ON CONFLICT (key) DO NOTHING;
+
+CREATE TABLE IF NOT EXISTS public.seasons (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  title TEXT NOT NULL,
+  start_date TIMESTAMP WITH TIME ZONE NOT NULL,
+  end_date TIMESTAMP WITH TIME ZONE NOT NULL,
+  status TEXT CHECK (status IN ('scheduled', 'pre_registration', 'active', 'retention', 'completed')) NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- 초기 가용 시즌 한 개 강제 삽입 (초기 셋업 시 1회 연출용 / 차후 대시보드 관리)
+INSERT INTO public.seasons (title, start_date, end_date, status) 
+SELECT '스프린트 3 (메인)', timezone('utc'::text, now()), timezone('utc'::text, now() + interval '14 days'), 'active'
+WHERE NOT EXISTS (SELECT 1 FROM public.seasons LIMIT 1);
 
 CREATE TABLE IF NOT EXISTS public.users (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -248,10 +262,34 @@ ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.notes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.picks ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.seasons ENABLE ROW LEVEL SECURITY;
 
 -- 전역/익명 및 기본 보안 정책 세팅
 DROP POLICY IF EXISTS "Enable Read Access for Anyone" ON public.system_settings CASCADE;
 CREATE POLICY "Enable Read Access for Anyone" ON public.system_settings FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Anyone can view seasons" ON public.seasons CASCADE;
+CREATE POLICY "Anyone can view seasons" ON public.seasons FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Admins can manage seasons" ON public.seasons CASCADE;
+CREATE POLICY "Admins can manage seasons" ON public.seasons USING (auth.role() = 'authenticated');
+
+-- [NEW] Realtime 활성화를 위해 publication에 등록
+-- 등록 전 이미 존재하는지 확인하는 안전한 구문 활용
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_publication_tables 
+    WHERE pubname = 'supabase_realtime' AND schemaname = 'public' AND tablename = 'seasons'
+  ) THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.seasons;
+  END IF;
+EXCEPTION
+  WHEN undefined_object THEN
+    -- 만약 supabase_realtime publication이 없다면 생성하고 추가 (로컬 등 엣지케이스)
+    CREATE PUBLICATION supabase_realtime FOR TABLE public.seasons;
+END
+$$;
 
 -- API를 통한 DB 직접 조회 방어: Custom Auth를 사용하므로 auth.uid()를 사용할 수 없음
 -- 따라서 테이블에 대한 직접적인 SELECT/INSERT/UPDATE/DELETE는 기본적으로 모두 차단 (기본 Deny).
@@ -431,21 +469,34 @@ AS $$
 DECLARE
   v_user RECORD;
   v_is_active BOOLEAN;
+  v_season_status TEXT;
 BEGIN
+  -- 현재 라이프사이클 최상위 시즌 읽기 (종료가 아닌 가장 최신 생성 시즌 판별)
+  SELECT status INTO v_season_status 
+  FROM public.seasons 
+  WHERE status != 'completed' 
+  ORDER BY created_at DESC 
+  LIMIT 1;
+
+  IF v_season_status IS NULL THEN
+     v_season_status := 'completed'; -- 만약 진행중인 시즌이 아예 아무것도 없으면 닫힌 것으로 간주
+  END IF;
+
   SELECT picks_remaining, my_note_copies INTO v_user FROM public.users WHERE id = p_uuid;
   
   IF NOT FOUND THEN
-    RETURN jsonb_build_object('is_active', false);
+    RETURN jsonb_build_object('is_active', false, 'season_status', v_season_status);
   END IF;
 
   SELECT is_active INTO v_is_active FROM public.notes WHERE user_id = p_uuid;
   
   IF NOT FOUND OR v_is_active = false THEN
-    RETURN jsonb_build_object('is_active', false);
+    RETURN jsonb_build_object('is_active', false, 'season_status', v_season_status);
   END IF;
 
   RETURN jsonb_build_object(
     'is_active', true,
+    'season_status', v_season_status,
     'picks_remaining', v_user.picks_remaining,
     'my_note_copies', v_user.my_note_copies
   );
