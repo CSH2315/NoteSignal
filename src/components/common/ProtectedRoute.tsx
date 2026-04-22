@@ -1,19 +1,22 @@
 import { useEffect, useState } from 'react';
-import { Navigate, useNavigate } from 'react-router-dom';
+import { Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { useUserStore } from '@/store/useUserStore';
 import { useSeasonStore } from '@/store/useSeasonStore';
 import { useSeasonRealtime } from '@/hooks/useSeasonRealtime';
+import { useBanRealtime } from '@/hooks/useBanRealtime';
 import { supabase } from '@/lib/supabase';
 
 export function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { uuid, logout, updateStatus } = useUserStore();
+  const { uuid, logout, updateStatus, isBanned, setBannedState } = useUserStore();
   const seasonStatus = useSeasonStore((state) => state.status);
   const setSeasonData = useSeasonStore((state) => state.setSeasonData);
   const [isValidating, setIsValidating] = useState(true);
   const navigate = useNavigate();
+  const location = useLocation();
 
   // 오직 인증된 유저(ProtectedRoute 통과자)에게만 실시간 웹소켓 연결
   useSeasonRealtime();
+  useBanRealtime();
 
   useEffect(() => {
     if (!uuid) {
@@ -34,6 +37,9 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
           if (data.season_status) {
              // title, startDate, endDate는 fetchCurrentSeason이 관리하므로 status만 갱신
              setSeasonData(data.season_status as any);
+          }
+          if (data.is_banned !== undefined) {
+            setBannedState(data.is_banned);
           }
           updateStatus(data.picks_remaining, data.my_note_copies);
         }
@@ -62,6 +68,13 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
     }
     // pre_registration이나 retention일 때는 Route 접근을 허용 (내부 페이지에서 분기)
   }, [seasonStatus, navigate]);
+
+  // 제재(Ban) 상태 강제 리다이렉트 (앱 활동 전면 금지)
+  useEffect(() => {
+    if (isBanned && location.pathname !== '/banned') {
+      navigate('/banned', { replace: true });
+    }
+  }, [isBanned, location.pathname, navigate]);
 
   if (!uuid) {
     return <Navigate to="/" replace />;

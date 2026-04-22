@@ -59,6 +59,24 @@ CREATE TABLE IF NOT EXISTS public.notes (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS public.bans (
+  user_id UUID PRIMARY KEY REFERENCES public.users(id) ON DELETE CASCADE,
+  is_banned BOOLEAN NOT NULL DEFAULT false,
+  reason TEXT,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS public.reports (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  reporter_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+  reported_note_id UUID NOT NULL REFERENCES public.notes(id) ON DELETE CASCADE,
+  reported_user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+  reason_type TEXT NOT NULL CHECK (reason_type IN ('욕설 및 혐오 표현', '스팸 및 도배', '음란물 및 성적 표현', '개인정보 침해', '기타')),
+  details TEXT,
+  status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'reviewed', 'resolved')),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
 CREATE INDEX IF NOT EXISTS idx_notes_feed ON public.notes(is_active, gender, created_at DESC);
 
 CREATE TABLE IF NOT EXISTS public.picks (
@@ -143,9 +161,11 @@ BEGIN
     END) as is_picked
   FROM public.notes n
   JOIN public.users u ON n.user_id = u.id
+  LEFT JOIN public.bans b ON n.user_id = b.user_id
   WHERE n.is_active = true 
     AND u.my_note_copies > 0
     AND n.gender = p_gender
+    AND (b.is_banned IS NULL OR b.is_banned = false)
   ORDER BY n.created_at DESC
   LIMIT p_limit OFFSET p_offset;
 END;
@@ -263,6 +283,8 @@ ALTER TABLE public.notes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.picks ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.seasons ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.bans ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.reports ENABLE ROW LEVEL SECURITY;
 
 -- 전역/익명 및 기본 보안 정책 세팅
 DROP POLICY IF EXISTS "Enable Read Access for Anyone" ON public.system_settings CASCADE;
@@ -271,8 +293,14 @@ CREATE POLICY "Enable Read Access for Anyone" ON public.system_settings FOR SELE
 DROP POLICY IF EXISTS "Anyone can view seasons" ON public.seasons CASCADE;
 CREATE POLICY "Anyone can view seasons" ON public.seasons FOR SELECT USING (true);
 
+DROP POLICY IF EXISTS "Anyone can view bans" ON public.bans CASCADE;
+CREATE POLICY "Anyone can view bans" ON public.bans FOR SELECT USING (true);
+
 DROP POLICY IF EXISTS "Admins can manage seasons" ON public.seasons CASCADE;
 CREATE POLICY "Admins can manage seasons" ON public.seasons USING (auth.role() = 'authenticated');
+
+DROP POLICY IF EXISTS "Admins can manage bans" ON public.bans CASCADE;
+CREATE POLICY "Admins can manage bans" ON public.bans USING (auth.role() = 'authenticated');
 
 -- [NEW] Realtime 활성화를 위해 publication에 등록
 -- 등록 전 이미 존재하는지 확인하는 안전한 구문 활용
@@ -284,10 +312,17 @@ BEGIN
   ) THEN
     ALTER PUBLICATION supabase_realtime ADD TABLE public.seasons;
   END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_publication_tables 
+    WHERE pubname = 'supabase_realtime' AND schemaname = 'public' AND tablename = 'bans'
+  ) THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.bans;
+  END IF;
 EXCEPTION
   WHEN undefined_object THEN
     -- 만약 supabase_realtime publication이 없다면 생성하고 추가 (로컬 등 엣지케이스)
-    CREATE PUBLICATION supabase_realtime FOR TABLE public.seasons;
+    CREATE PUBLICATION supabase_realtime FOR TABLE public.seasons, public.bans;
 END
 $$;
 
@@ -469,6 +504,7 @@ AS $$
 DECLARE
   v_user RECORD;
   v_is_active BOOLEAN;
+  v_is_banned BOOLEAN := false;
   v_season_status TEXT;
 BEGIN
   -- 현재 라이프사이클 최상위 시즌 읽기 (종료가 아닌 가장 최신 생성 시즌 판별)
@@ -494,11 +530,64 @@ BEGIN
     RETURN jsonb_build_object('is_active', false, 'season_status', v_season_status);
   END IF;
 
+  -- 밴 여부 확인
+  SELECT is_banned INTO v_is_banned FROM public.bans WHERE user_id = p_uuid;
+  IF v_is_banned IS NULL THEN
+    v_is_banned := false;
+  END IF;
+
   RETURN jsonb_build_object(
     'is_active', true,
     'season_status', v_season_status,
+    'is_banned', v_is_banned,
     'picks_remaining', v_user.picks_remaining,
     'my_note_copies', v_user.my_note_copies
   );
+END;
+$$;
+
+-- 13. 신고 및 제재 처리를 위한 RPC (Phase 3)
+-------------------------------------------------
+DROP FUNCTION IF EXISTS public.submit_report(UUID, UUID, TEXT, TEXT) CASCADE;
+CREATE OR REPLACE FUNCTION public.submit_report(
+  p_reporter_id UUID,
+  p_note_id UUID,
+  p_reason_type TEXT,
+  p_details TEXT DEFAULT NULL
+)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  v_reported_user_id UUID;
+BEGIN
+  -- 1. 쪽지 작성자 찾기
+  SELECT user_id INTO v_reported_user_id
+  FROM public.notes
+  WHERE id = p_note_id;
+
+  IF NOT FOUND THEN
+    RETURN jsonb_build_object('success', false, 'reason', '존재하지 않거나 삭제된 쪽지입니다.');
+  END IF;
+
+  -- 2. 자기 자신 신고 방지
+  IF v_reported_user_id = p_reporter_id THEN
+    RETURN jsonb_build_object('success', false, 'reason', '자신의 쪽지는 신고할 수 없습니다.');
+  END IF;
+
+  -- 3. 중복 신고 방지
+  IF EXISTS (
+    SELECT 1 FROM public.reports 
+    WHERE reporter_id = p_reporter_id AND reported_note_id = p_note_id
+  ) THEN
+    RETURN jsonb_build_object('success', false, 'reason', '이미 신고한 쪽지입니다.');
+  END IF;
+
+  -- 4. 신고 삽입
+  INSERT INTO public.reports (reporter_id, reported_note_id, reported_user_id, reason_type, details)
+  VALUES (p_reporter_id, p_note_id, v_reported_user_id, p_reason_type, p_details);
+
+  RETURN jsonb_build_object('success', true);
 END;
 $$;

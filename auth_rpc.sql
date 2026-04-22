@@ -36,6 +36,7 @@ DECLARE
   v_dummy_hash TEXT := '$2a$06$wI.2e./5Nn6NRe8lV.H2b.n9a2hR/M0g7oM8A.n7r8l0D9u/O5s7q'; -- Timing attack 방어 (고정 해시값 사용)
   v_is_valid_pin BOOLEAN;
   v_is_active BOOLEAN := false;
+  v_is_banned BOOLEAN := false;
   v_season_status TEXT;
   v_now TIMESTAMP WITH TIME ZONE := timezone('utc'::text, now());
 BEGIN
@@ -111,6 +112,12 @@ BEGIN
       v_season_status := 'completed';
     END IF;
     
+    -- 밴 여부 확인
+    SELECT is_banned INTO v_is_banned FROM public.bans WHERE user_id = v_user_record.id;
+    IF v_is_banned IS NULL THEN
+      v_is_banned := false;
+    END IF;
+    
     IF v_is_active IS NULL OR v_is_active = false THEN
       -- 쪽지 삭제 유저 또는 쪽지 데이터가 없는 유저 -> 재등록 권유 데이터 반환
       RETURN jsonb_build_object(
@@ -128,6 +135,7 @@ BEGIN
         'user_id', v_user_record.id, 
         'gender', v_user_record.gender, 
         'season_status', v_season_status,
+        'is_banned', v_is_banned,
         'picks_remaining', v_user_record.picks_remaining,
         'my_note_copies', v_user_record.my_note_copies
       );

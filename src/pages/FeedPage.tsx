@@ -4,6 +4,7 @@ import { useUserStore } from '@/store/useUserStore';
 import { BottomNav } from '@/components/common/BottomNav';
 import { NoteCard } from '@/components/feed/NoteCard';
 import { PickCompleteModal } from '@/components/feed/PickCompleteModal';
+import { ReportModal } from '@/components/feed/ReportModal';
 import { AlertCircle } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useSeasonStore } from '@/store/useSeasonStore';
@@ -38,6 +39,9 @@ export default function FeedPage() {
   const [isCompleteModalOpen, setIsCompleteModalOpen] = useState(false);
   const [recentPickedCount, setRecentPickedCount] = useState(0);
   const [recentFailedCount, setRecentFailedCount] = useState(0);
+  
+  // 신고 관련 상태
+  const [reportingNoteId, setReportingNoteId] = useState<string | null>(null);
 
   // 무한 스크롤 참조용 (옵저버 타겟)
   const observerTarget = useRef<HTMLDivElement>(null);
@@ -126,9 +130,9 @@ export default function FeedPage() {
     setSelectedNoteIds((prev) => [...prev, id]);
   };
 
-  // 신고 기능 대기 함수
+  // 신고하기 클릭 (ReportModal 열기)
   const handleReport = (id: string) => {
-    alert(`[스프린트2 예정] 쪽지 고유번호: ${id}\n이 쪽지를 신고하는 화면(모달)이 열리게 됩니다.`);
+    setReportingNoteId(id);
   };
 
   // 선택하기 액션 (DB 횟수 차감 및 쪽지함 이동)
@@ -294,6 +298,13 @@ export default function FeedPage() {
         // 모달이 떠있을 때는 일반 네비게이션 바를 가려줌 (모달에 온전히 집중하도록)
         !isCompleteModalOpen && <BottomNav />
       )}
+
+      {/* 신고 모달 */}
+      <ReportModal 
+        isOpen={reportingNoteId !== null} 
+        onClose={() => setReportingNoteId(null)}
+        noteId={reportingNoteId}
+      />
     </div>
   );
 }
