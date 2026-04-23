@@ -591,3 +591,29 @@ BEGIN
   RETURN jsonb_build_object('success', true);
 END;
 $$;
+
+-- 14. 신규 쪽지 등록 여부 확인용 RPC (폴링 최적화)
+-------------------------------------------------
+DROP FUNCTION IF EXISTS public.check_new_notes_exist(TEXT, TIMESTAMP WITH TIME ZONE) CASCADE;
+CREATE OR REPLACE FUNCTION public.check_new_notes_exist(
+  p_target_gender TEXT,
+  p_last_timestamp TIMESTAMP WITH TIME ZONE
+)
+RETURNS BOOLEAN
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  v_exists BOOLEAN;
+BEGIN
+  -- 대상 성별의 쪽지 중 입력된 시간보다 더 최근에 등록된 활성 쪽지가 1개라도 있는지 초고속 검사
+  SELECT EXISTS(
+    SELECT 1 FROM public.notes 
+    WHERE gender = p_target_gender 
+      AND is_active = true 
+      AND created_at > p_last_timestamp
+  ) INTO v_exists;
+  
+  RETURN v_exists;
+END;
+$$;

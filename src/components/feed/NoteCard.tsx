@@ -22,7 +22,7 @@ export function NoteCard({ note, isSelected, onSelect, onReport }: NoteCardProps
   return (
     <div 
       onClick={() => { if (!note.isPicked) onSelect(note.id); }}
-      className={`relative w-full rounded-3xl p-5 cursor-pointer transition-all duration-300 break-inside-avoid shadow-sm
+      className={`relative w-full h-full rounded-3xl p-5 flex flex-col cursor-pointer transition-all duration-300 shadow-sm
         ${note.isPicked 
           ? 'bg-gray-50 border-gray-200 opacity-60 cursor-not-allowed'
           : isSelected 
@@ -30,7 +30,6 @@ export function NoteCard({ note, isSelected, onSelect, onReport }: NoteCardProps
             : 'bg-white border border-gray-100 hover:shadow-md hover:-translate-y-1'
         }
       `}
-      style={{ marginBottom: '1rem' }}
     >
       {/* Checkbox Icon */}
       {isSelected && (
@@ -68,7 +67,7 @@ export function NoteCard({ note, isSelected, onSelect, onReport }: NoteCardProps
       </div>
 
       {/* Body: Charm & Ideal Type */}
-      <div className="space-y-4">
+      <div className="space-y-4 flex-1 pb-4">
         <div>
           <span className="block text-xs font-bold text-gray-400 mb-1">자신의 매력</span>
           <p className="text-sm text-gray-700 leading-relaxed line-clamp-4">

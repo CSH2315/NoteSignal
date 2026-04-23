@@ -28,8 +28,21 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
       try {
         const { data, error } = await supabase.rpc('get_user_status', { p_uuid: uuid });
 
-        if (error || !data || !data.is_active) {
-          // 서버 통신 오류거나 파기된 세션(쪽지 삭제 등)이면 로그아웃 처리
+        if (error) {
+          // supabase-js는 오프라인 시 catch 쪽이 아닌 여기서 error 객체로 'Failed to fetch'를 뱉음
+          if (
+            error.message?.includes('Failed to fetch') || 
+            error.message?.includes('Network Error') ||
+            error.code === 'TypeError'
+          ) {
+            console.warn('네트워크 단절 감지: 세션을 유지하고 오프라인 상태로 대기합니다.');
+          } else {
+            // 진짜 DB 에러(권한 없음 등)
+            logout();
+            navigate('/', { replace: true });
+          }
+        } else if (!data || !data.is_active) {
+          // 서버 통신은 성공했으나 쪽지가 파기된 세션이면 로그아웃 처리
           logout();
           navigate('/', { replace: true });
         } else {

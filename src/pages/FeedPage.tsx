@@ -5,7 +5,7 @@ import { BottomNav } from '@/components/common/BottomNav';
 import { NoteCard } from '@/components/feed/NoteCard';
 import { PickCompleteModal } from '@/components/feed/PickCompleteModal';
 import { ReportModal } from '@/components/feed/ReportModal';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, RefreshCw } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useSeasonStore } from '@/store/useSeasonStore';
 
@@ -45,8 +45,13 @@ export default function FeedPage() {
 
   // 무한 스크롤 참조용 (옵저버 타겟)
   const observerTarget = useRef<HTMLDivElement>(null);
+  
+  // 새로고침 및 피드 상태 제어
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [showRefreshBanner, setShowRefreshBanner] = useState(false);
+  const [lastFetchedAt, setLastFetchedAt] = useState<string>(new Date().toISOString());
 
-  // 쪽지 로드 함수 (최신순 10개씩 페이징 로드)
+  // 데이터 fetch 함수 (페이지네이션)
   const loadMoreNotes = useCallback(async () => {
     if (isLoading || !hasMore || picksRemaining <= 0 || !myGender || seasonStatus === 'pre_registration' || seasonStatus === 'retention') return;
     setIsLoading(true);
@@ -80,6 +85,12 @@ export default function FeedPage() {
         if (data.length < 10) {
           setHasMore(false);
         }
+        
+        // 초기 렌더링 시 최신 갱신 기록
+        if (page === 1) {
+          setLastFetchedAt(new Date().toISOString());
+          setShowRefreshBanner(false);
+        }
       } else {
         // 데이터가 아예 안 온 경우 (또는 10의 배수로 끝난 후 다음 0개 요청 시)
         setHasMore(false);
@@ -90,6 +101,70 @@ export default function FeedPage() {
       setIsLoading(false);
     }
   }, [page, isLoading, hasMore, myGender, picksRemaining, uuid, seasonStatus]);
+
+  // 피드 강제 새로고침
+  const refreshFeed = async () => {
+    if (picksRemaining <= 0 || !myGender || seasonStatus === 'pre_registration' || seasonStatus === 'retention') return;
+    setIsRefreshing(true);
+    try {
+      const targetGender = myGender === 'male' ? 'female' : 'male';
+      const { data, error } = await supabase
+        .rpc('get_feed_notes', {
+          p_gender: targetGender,
+          p_limit: 10,
+          p_offset: 0,
+          p_viewer_id: uuid
+        });
+
+      if (error) throw error;
+      
+      setNotes(data || []);
+      setPage(2); // 이미 처음 사이즈를 불러왔으니 다음은 offset 10부터
+      setHasMore((data?.length || 0) >= 10);
+      setSelectedNoteIds([]); // 선택 초기화
+      setLastFetchedAt(new Date().toISOString());
+      setShowRefreshBanner(false);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch (err) {
+      console.error('Failed to refresh notes', err);
+    } finally {
+      setTimeout(() => setIsRefreshing(false), 500); // 사용자 경험을 위한 시각적 딜레이
+    }
+  };
+
+  // 새로운 쪽지 폴링 및 5분 타임아웃 감지
+  useEffect(() => {
+    if (seasonStatus !== 'active' || picksRemaining <= 0 || !myGender || !uuid) return;
+
+    const checkUpdates = async () => {
+      // 1. 피드 체류 시간 무검증 갱신 (1분 이상 지났을 시)
+      const minutesSinceFetch = (new Date().getTime() - new Date(lastFetchedAt).getTime()) / 60000;
+      if (minutesSinceFetch > 1 && !showRefreshBanner) {
+        setShowRefreshBanner(true);
+        return;
+      }
+
+      // 2. 신규 쪽지 존재 여부를 가벼운 RPC 호출로 실시간 검사
+      if (!showRefreshBanner) {
+        try {
+          const targetGender = myGender === 'male' ? 'female' : 'male';
+          const { data, error } = await supabase.rpc('check_new_notes_exist', {
+            p_target_gender: targetGender,
+            p_last_timestamp: lastFetchedAt
+          });
+          
+          if (!error && data === true) {
+            setShowRefreshBanner(true); // 등록 확인 완료!
+          }
+        } catch (err) {
+          // ignore background fetch errors smoothly
+        }
+      }
+    };
+
+    const intervalId = setInterval(checkUpdates, 15000); // 15초마다 가볍게 체크
+    return () => clearInterval(intervalId);
+  }, [seasonStatus, picksRemaining, myGender, uuid, lastFetchedAt, showRefreshBanner]);
 
   // Intersection Observer 설정 (스크롤이 바닥 근처에 닿으면 다음 페이지 로드)
   useEffect(() => {
@@ -204,6 +279,20 @@ export default function FeedPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 pb-28 pt-4">
+      {/* 플로팅 새로고침 버튼 */}
+      {seasonStatus === 'active' && picksRemaining > 0 && showRefreshBanner && (
+        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-top-10 fade-in duration-300">
+          <button 
+            onClick={refreshFeed}
+            disabled={isRefreshing}
+            className="flex items-center gap-2 px-5 py-2.5 bg-brand-500 text-white font-bold text-sm rounded-full shadow-[0_8px_20px_rgba(255,59,48,0.3)] border border-brand-400 hover:bg-brand-600 active:scale-95 transition-all duration-300"
+          >
+            <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin text-brand-100' : ''}`} />
+            새로고침
+          </button>
+        </div>
+      )}
+
       {seasonStatus === 'pre_registration' ? (
         <div className="flex flex-col items-center justify-center pt-24 px-6 text-center animate-in fade-in zoom-in duration-300">
           <div className="w-16 h-16 bg-brand-50 rounded-full flex items-center justify-center mb-6 shadow-sm border border-brand-100">
@@ -241,7 +330,7 @@ export default function FeedPage() {
           </p>
         </div>
       ) : (
-        <div className="px-4 columns-2 gap-4 space-y-4">
+        <div className="px-4 grid grid-cols-2 gap-3 items-stretch">
           {notes.map((note) => (
             note.id && (
               <NoteCard
