@@ -7,6 +7,7 @@ import { Bell } from 'lucide-react';
 export function RealtimeAlerts() {
   const uuid = useUserStore((state) => state.uuid);
   const decrementMyNoteCopies = useUserStore((state) => state.decrementMyNoteCopies);
+  const setHasUnreadNotifications = useUserStore((state) => state.setHasUnreadNotifications);
 
   useEffect(() => {
     // 사용자가 로그인하지 않았다면 구독하지 않음
@@ -24,6 +25,9 @@ export function RealtimeAlerts() {
           filter: `user_id=eq.${uuid}`, // 내 알림만 필터링
         },
         (payload) => {
+          // 0. 아이콘 뱃지 업데이트
+          setHasUnreadNotifications(true);
+
           // 1. 새로운 알림 인서트 시 예쁜 우측 상단 팝업 띄우기
           const { title, message, type } = payload.new;
           
@@ -73,7 +77,7 @@ export function RealtimeAlerts() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [uuid, decrementMyNoteCopies]);
+  }, [uuid, decrementMyNoteCopies, setHasUnreadNotifications]);
 
   return <Toaster />;
 }

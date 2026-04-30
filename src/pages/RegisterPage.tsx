@@ -12,7 +12,7 @@ import toast from 'react-hot-toast';
 
 const registerSchema = z.object({
   nickname: z.string().min(1, '이름 또는 닉네임을 입력해주세요.').max(10, '최대 10자까지 가능합니다.'),
-  gender: z.enum(['male', 'female'], { required_error: '성별을 선택해주세요.' }),
+  gender: z.enum(['male', 'female'], { message: '성별을 선택해주세요.' }),
   age: z.number().min(20, '20세 이상만 가입 가능합니다.').max(29, '20대만 가입 가능합니다.'),
   isAgeVisible: z.boolean(),
   contactType: z.enum(['instagram', 'kakao']),
@@ -129,9 +129,12 @@ export default function RegisterPage() {
         // 2. 가입 완료 시 브라우저에 20일짜리 제한 쿠키 발급 (max-age = 60 * 60 * 24 * 20)
         document.cookie = "ns_device_id=registered; max-age=1728000; path=/";
 
-        // Set User Store with response values matching the new signature
-        // Assuming male=2, female=4 are the initial defaults as handled by the trigger
-        setStoreUser(data.user_id, formData.gender as 'male' | 'female', formData.gender === 'female' ? 4 : 2, 2);
+        // 서버에 등록된 DB 트리거(picks) 기본값 조회
+        const { data: statusData } = await supabase.rpc('get_user_status', { p_uuid: data.user_id });
+        const picks = statusData?.picks_remaining ?? (formData.gender === 'female' ? 4 : 2);
+        const copies = statusData?.my_note_copies ?? 2;
+
+        setStoreUser(data.user_id, formData.gender as 'male' | 'female', picks, copies);
         toast.success('쪽지가 등록되었습니다!');
         navigate('/feed', { replace: true });
       } else {

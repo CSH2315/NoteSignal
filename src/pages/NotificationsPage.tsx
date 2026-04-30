@@ -16,7 +16,7 @@ interface NotificationItem {
 
 export default function NotificationsPage() {
   const navigate = useNavigate();
-  const { uuid } = useUserStore();
+  const { uuid, setHasUnreadNotifications } = useUserStore();
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -50,6 +50,7 @@ export default function NotificationsPage() {
           await supabase.rpc('mark_notifications_as_read', {
             p_user_id: uuid
           });
+          setHasUnreadNotifications(false);
         }
       } catch (error) {
         console.error('Failed to fetch notifications:', error);
@@ -60,7 +61,7 @@ export default function NotificationsPage() {
     };
 
     fetchNotifications();
-  }, [uuid, navigate]);
+  }, [uuid, navigate, setHasUnreadNotifications]);
 
   // 시간 포맷팅 함수 (예: '2시간 전', '1일 전')
   const formatTimeAgo = (dateStr: string) => {

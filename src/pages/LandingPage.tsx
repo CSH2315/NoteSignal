@@ -1,33 +1,40 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUserStore } from '@/store/useUserStore';
-import { isSeasonActive } from '@/lib/season';
 import { LoginModal } from '@/components/landing/LoginModal';
 import { ArrowRight } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useSeasonStore } from '@/store/useSeasonStore';
 
 export default function LandingPage() {
   const navigate = useNavigate();
   const uuid = useUserStore((state) => state.uuid);
+  const { status: seasonStatus } = useSeasonStore();
   const [isChecking, setIsChecking] = useState(true);
   const [isLoginModalOpen, setLoginModalOpen] = useState(false);
 
   useEffect(() => {
-    // 1. Check Season Status
-    if (!isSeasonActive()) {
-      navigate('/next-season');
+    if (seasonStatus === 'loading') return;
+
+    // 1. 이미 접속한 유저라면 일단 Feed로 무조건 보냅니다.
+    if (uuid) {
+      navigate('/feed', { replace: true });
       return;
     }
 
-    // 2. Auto-login check
-    if (uuid) {
-      navigate('/feed');
+    // 2. 로그인이 안 된 유저들만 시즌 상태로 분기 처리합니다.
+    if (seasonStatus === 'scheduled' || seasonStatus === 'completed' || seasonStatus === 'retention') {
+      navigate('/next-season', { replace: true });
       return;
     }
 
     // If no UUID and season is active, show the Landing Page UI
-    setIsChecking(false);
-  }, [uuid, navigate]);
+    const timer = setTimeout(() => {
+      setIsChecking(false);
+    }, 400); // 0.4s delay 최소한의 시간 확보 (화면 깜빡임 방지)
+
+    return () => clearTimeout(timer);
+  }, [uuid, navigate, seasonStatus]);
 
   if (isChecking) {
     return (
@@ -74,6 +81,12 @@ export default function LandingPage() {
 
           {/* Action Buttons */}
           <div className="flex flex-col w-full gap-4">
+            {seasonStatus === 'pre_registration' && (
+              <div className="flex items-center justify-center w-full px-4 py-3 bg-brand-50 border border-brand-200 text-brand-600 rounded-2xl font-bold text-sm shadow-sm animate-pulse mb-1">
+                🔥 지금은 사전 등록 기간입니다! 미리 쪽지를 남겨보세요.
+              </div>
+            )}
+
             <button
               onClick={() => navigate('/register')}
               className="w-full flex items-center justify-between px-6 py-4 bg-brand-500 text-white rounded-2xl font-bold text-lg hover:bg-brand-600 active:scale-95 transition-all shadow-lg shadow-brand-500/30"

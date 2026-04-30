@@ -101,7 +101,7 @@ export function RecoveryCodeModal({ isOpen, code, onConfirm }: RecoveryCodeModal
           disabled={pinCode.length !== 4 || pinConfirm.length !== 4}
           className="w-full py-4 bg-gray-900 text-white font-bold rounded-xl hover:bg-black disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
-          저장했습니다 (메인으로 이동)
+          피드에 등록되었습니다
         </button>
       </div>
     </>

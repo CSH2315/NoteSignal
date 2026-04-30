@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { Check, ChevronRight, X } from 'lucide-react';
+import { PrivacyPolicy } from './PrivacyPolicy';
+import { TermsOfService } from './TermsOfService';
 
 interface TermsModalProps {
   isOpen: boolean;
@@ -39,12 +41,8 @@ export function TermsModal({ isOpen, onAgree, onClose }: TermsModalProps) {
           <h2 className="text-lg font-bold">개인정보 이용 동의</h2>
           <button onClick={() => setDetailView(null)} className="p-2"><X className="w-6 h-6" /></button>
         </div>
-        <div className="flex-1 overflow-y-auto p-6 text-gray-600 text-sm leading-relaxed space-y-4">
-          <p>수집하는 개인정보: 연령, 성별, 이상형, 매력, 인스타그램/카카오톡 ID (연락처 제공용) 등 프로필 생성에 필요한 항목.</p>
-          <p>사용자의 프로필(쪽지)은 서비스 운영 기간 동안 본 서비스 내에서 제공되며, 본인이 직접 삭제할 때까지 보관됩니다. 단, 사용자가 삭제하지 않더라도 시즌이 종료되면 일괄 파기되거나 비공개 처리될 수 있습니다.</p>
-          <p>(임시 개인정보 처리 방침 내용...)</p>
-          {/* Scrollable content mock */}
-          <div className="h-[50vh]"></div>
+        <div className="flex-1 overflow-y-auto p-4 md:p-6 bg-white">
+          <PrivacyPolicy />
         </div>
         <div className="p-4 border-t bg-white">
           <button
@@ -65,12 +63,8 @@ export function TermsModal({ isOpen, onAgree, onClose }: TermsModalProps) {
           <h2 className="text-lg font-bold">이용약관 동의</h2>
           <button onClick={() => setDetailView(null)} className="p-2"><X className="w-6 h-6" /></button>
         </div>
-        <div className="flex-1 overflow-y-auto p-6 text-gray-600 text-sm leading-relaxed space-y-4">
-          <p>NoteSignal은 사용자 간의 연락처 매칭을 돕는 서비스입니다.</p>
-          <p>사용자는 타인에게 불쾌감을 주거나 거짓된 정보를 등록해서는 안 되며, 부적절한 사용자 신고 누적 시 서비스 이용이 영구적으로 제한될 수 있습니다.</p>
-          <p>(임시 이용약관 내용...)</p>
-          {/* Scrollable content mock */}
-          <div className="h-[50vh]"></div>
+        <div className="flex-1 overflow-y-auto p-4 md:p-6 bg-white">
+          <TermsOfService />
         </div>
         <div className="p-4 border-t bg-white">
           <button
