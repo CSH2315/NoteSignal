@@ -37,6 +37,9 @@ export const useUserStore = create<UserState>()(
       decrementPicks: (count = 1) => set((state) => ({ 
         picksRemaining: Math.max(0, state.picksRemaining - count) 
       })),
+      decrementMyNoteCopies: () => set((state) => ({
+        myNoteCopies: Math.max(0, state.myNoteCopies - 1)
+      })),
       updateStatus: (picksRemaining, myNoteCopies, isBanned) => set((state) => ({
         picksRemaining,
         myNoteCopies,

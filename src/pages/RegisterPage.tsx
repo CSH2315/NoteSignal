@@ -12,7 +12,7 @@ import toast from 'react-hot-toast';
 
 const registerSchema = z.object({
   nickname: z.string().min(1, '이름 또는 닉네임을 입력해주세요.').max(10, '최대 10자까지 가능합니다.'),
-  gender: z.enum(['male', 'female'], { required_error: '성별을 선택해주세요.' }),
+  gender: z.enum(['male', 'female'], { message: '성별을 선택해주세요.' }),
   age: z.number().min(20, '20세 이상만 가입 가능합니다.').max(29, '20대만 가입 가능합니다.'),
   isAgeVisible: z.boolean(),
   contactType: z.enum(['instagram', 'kakao']),
