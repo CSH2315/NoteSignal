@@ -56,7 +56,6 @@ export default function RegisterPage() {
   const [showTermsModal, setShowTermsModal] = useState(true);
   const [showRecoveryModal, setShowRecoveryModal] = useState(false);
   const [generatedCode, setGeneratedCode] = useState('');
-  const [agreedMarketing, setAgreedMarketing] = useState(false);
   const [isRegistering, setIsRegistering] = useState(false);
 
   const {
@@ -110,7 +109,6 @@ export default function RegisterPage() {
         p_login_id: generatedCode,
         p_pin_code: pin,
         p_gender: formData.gender,
-        p_agreed_marketing: agreedMarketing,
         p_nickname: formData.nickname,
         p_contact_type: formData.contactType,
         p_contact_id: formData.contactId,
@@ -190,7 +188,7 @@ export default function RegisterPage() {
     <div className="min-h-screen bg-gray-50 flex flex-col pt-4 pb-20 px-6">
       <TermsModal 
         isOpen={showTermsModal} 
-        onAgree={(marketing) => { setAgreedMarketing(marketing); setShowTermsModal(false); }}
+        onAgree={() => { setShowTermsModal(false); }}
         onClose={() => navigate('/')}
       />
 

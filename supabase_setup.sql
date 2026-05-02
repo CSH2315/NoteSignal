@@ -36,7 +36,6 @@ CREATE TABLE IF NOT EXISTS public.users (
   picks_remaining INTEGER,            -- 남 2, 여 4 등 가입 시 부여 (시즌 초기화 시 NULL 처리)
   my_note_copies INTEGER NOT NULL DEFAULT 2, -- 이번 시즌 매진 횟수
   agreed_terms BOOLEAN NOT NULL DEFAULT true,
-  agreed_marketing BOOLEAN NOT NULL DEFAULT false,
   failed_login_attempts INTEGER NOT NULL DEFAULT 0,
   locked_until TIMESTAMP WITH TIME ZONE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL

@@ -170,7 +170,6 @@ export type Database = {
       }
       users: {
         Row: {
-          agreed_marketing: boolean
           agreed_terms: boolean
           created_at: string
           failed_login_attempts: number
@@ -183,7 +182,6 @@ export type Database = {
           pin_code: string | null
         }
         Insert: {
-          agreed_marketing?: boolean
           agreed_terms?: boolean
           created_at?: string
           failed_login_attempts?: number
@@ -196,7 +194,6 @@ export type Database = {
           pin_code?: string | null
         }
         Update: {
-          agreed_marketing?: boolean
           agreed_terms?: boolean
           created_at?: string
           failed_login_attempts?: number

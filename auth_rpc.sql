@@ -163,12 +163,12 @@ $$;
 -- ==========================================================
 -- 3. 회원가입 및 쪽지 등록 원자적 처리 (프론트에서 평문 던지면 여기서 Hashing)
 -- ==========================================================
-DROP FUNCTION IF EXISTS public.register_note(TEXT, TEXT, TEXT, BOOLEAN, TEXT, TEXT, TEXT, INTEGER, BOOLEAN, TEXT, TEXT, TEXT) CASCADE;
+DROP FUNCTION IF EXISTS public.register_note(TEXT, TEXT, TEXT, BOOLEAN, TEXT, TEXT, TEXT, INTEGER, BOOLEAN, TEXT, TEXT, TEXT) CASCADE; -- Drop old signature
+DROP FUNCTION IF EXISTS public.register_note(TEXT, TEXT, TEXT, TEXT, TEXT, TEXT, INTEGER, BOOLEAN, TEXT, TEXT, TEXT) CASCADE; -- Drop new signature
 CREATE OR REPLACE FUNCTION public.register_note(
   p_login_id TEXT,
   p_pin_code TEXT,
   p_gender TEXT,
-  p_agreed_marketing BOOLEAN,
   p_nickname TEXT,
   p_contact_type TEXT,
   p_contact_id TEXT,
@@ -229,9 +229,9 @@ BEGIN
   v_hashed_pin := crypt(p_pin_code, gen_salt('bf'));
   
   INSERT INTO public.users (
-    login_id, pin_code, gender, agreed_terms, agreed_marketing
+    login_id, pin_code, gender, agreed_terms
   ) VALUES (
-    p_login_id, v_hashed_pin, p_gender, true, p_agreed_marketing
+    p_login_id, v_hashed_pin, p_gender, true
   ) RETURNING id INTO v_user_id;
 
   INSERT INTO public.notes (

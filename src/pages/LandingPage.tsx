@@ -64,7 +64,7 @@ export default function LandingPage() {
             Note<span className="text-brand-500">Signal</span>
           </h1>
           <p className="text-gray-600 text-lg md:text-xl font-medium max-w-[280px]">
-            "이번엔 꼭 솔로탈출 하세요!"
+            쪽지 한 장으로 시작되는 20대의 연애
           </p>
         </motion.div>
 
@@ -76,7 +76,7 @@ export default function LandingPage() {
           className="flex flex-col items-center w-full"
         >
           <p className="text-gray-500 text-sm max-w-[300px] leading-relaxed mb-8">
-            쪽지 한 장으로 시작되는 20대의 연애
+            현재 테스트 운영 기간으로, 정식 오픈은 5월 13일입니다.
           </p>
 
           {/* Action Buttons */}
