@@ -8,7 +8,7 @@ import { toast } from 'react-hot-toast';
 
 export default function ProfilePage() {
   const navigate = useNavigate();
-  const { uuid, logout, gender, myNoteCopies } = useUserStore();
+  const { uuid, logout, myNoteCopies } = useUserStore();
   
   const [profile, setProfile] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
