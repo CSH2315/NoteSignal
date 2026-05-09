@@ -5,8 +5,10 @@ import { LoginModal } from '@/components/landing/LoginModal';
 import { ArrowRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useSeasonStore } from '@/store/useSeasonStore';
+import { useSeasonRealtime } from '@/hooks/useSeasonRealtime';
 
 export default function LandingPage() {
+  useSeasonRealtime();
   const navigate = useNavigate();
   const uuid = useUserStore((state) => state.uuid);
   const { status: seasonStatus } = useSeasonStore();
@@ -63,7 +65,7 @@ export default function LandingPage() {
           <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 tracking-tight mb-4">
             Note<span className="text-brand-500">Signal</span>
           </h1>
-          <p className="text-gray-600 text-lg md:text-xl font-medium max-w-[280px]">
+          <p className="text-gray-600 text-base sm:text-lg md:text-xl font-medium max-w-[280px]">
             쪽지 한 장으로 시작되는 20대의 연애
           </p>
         </motion.div>

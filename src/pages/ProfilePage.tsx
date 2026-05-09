@@ -176,7 +176,7 @@ export default function ProfilePage() {
               className="w-full py-4 bg-gray-200 text-gray-400 font-bold rounded-2xl flex items-center justify-center gap-2 cursor-not-allowed"
             >
               <Edit3 className="w-5 h-5" />
-              수정 불가 (남은 쪽지 0장)
+              남은 쪽지가 없습니다
             </button>
           )}
           

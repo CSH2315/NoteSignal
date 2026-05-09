@@ -51,6 +51,22 @@ export default function FeedPage() {
   const [showRefreshBanner, setShowRefreshBanner] = useState(false);
   const [lastFetchedAt, setLastFetchedAt] = useState<string>(new Date().toISOString());
 
+  // 네트워크 오프라인 상태 관리
+  const [isOffline, setIsOffline] = useState(!navigator.onLine);
+
+  useEffect(() => {
+    const handleOnline = () => setIsOffline(false);
+    const handleOffline = () => setIsOffline(true);
+    
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
   // 데이터 fetch 함수 (페이지네이션)
   const loadMoreNotes = useCallback(async () => {
     if (isLoading || !hasMore || picksRemaining <= 0 || !myGender || seasonStatus === 'pre_registration' || seasonStatus === 'retention') return;
@@ -293,7 +309,17 @@ export default function FeedPage() {
         </div>
       )}
 
-      {seasonStatus === 'pre_registration' ? (
+      {isOffline ? (
+        <div className="flex flex-col items-center justify-center pt-24 px-6 text-center animate-in fade-in zoom-in duration-300">
+          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-6 shadow-sm border border-gray-200">
+            <AlertCircle className="w-8 h-8 text-gray-400" />
+          </div>
+          <h2 className="text-xl font-bold text-gray-900 mb-2 tracking-tight">네트워크 오류</h2>
+          <p className="text-gray-500 max-w-[280px] leading-relaxed">
+            인터넷 연결이 불안정합니다. 네트워크를 확인해주세요.
+          </p>
+        </div>
+      ) : seasonStatus === 'pre_registration' ? (
         <div className="flex flex-col items-center justify-center pt-24 px-6 text-center animate-in fade-in zoom-in duration-300">
           <div className="w-16 h-16 bg-brand-50 rounded-full flex items-center justify-center mb-6 shadow-sm border border-brand-100">
             <span className="text-3xl animate-bounce">⏰</span>
