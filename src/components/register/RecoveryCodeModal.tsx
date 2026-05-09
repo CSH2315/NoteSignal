@@ -91,17 +91,17 @@ export function RecoveryCodeModal({ isOpen, code, onConfirm }: RecoveryCodeModal
         </div>
 
         <div className="text-xs text-red-500 text-center mb-6 space-y-1">
-          <p>⚠️ 2026.03.31 (시즌 종료일)까지 유효합니다.</p>
+          <p>⚠️ 시즌 종료일까지 유효합니다.</p>
           <p>⚠️ 절대 타인에게 공유하지 마세요.</p>
-          <p className="font-bold">⚠️ 이 화면을 캡처하거나 코드를 따로 저장해주세요!</p>
+          <p className="font-bold">⚠️ 이 화면을 캡처하거나 코드를 따로 저장해주세요! 잃어버릴 경우 찾을 수 없습니다.</p>
         </div>
 
         <button
           onClick={handleSubmit}
-          disabled={pinCode.length !== 4 || pinConfirm.length !== 4}
+          disabled={pinCode.length !== 4 || pinConfirm.length !== 4 || pinCode !== pinConfirm}
           className="w-full py-4 bg-gray-900 text-white font-bold rounded-xl hover:bg-black disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
-          피드에 등록되었습니다
+          저장
         </button>
       </div>
     </>
