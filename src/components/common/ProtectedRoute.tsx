@@ -7,7 +7,7 @@ import { useBanRealtime } from '@/hooks/useBanRealtime';
 import { supabase } from '@/lib/supabase';
 
 export function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { uuid, logout, updateStatus, isBanned, setBannedState } = useUserStore();
+  const { uuid, logout, updateStatus, isBanned, setBannedState, setHasUnreadNotifications } = useUserStore();
   const seasonStatus = useSeasonStore((state) => state.status);
   const setSeasonData = useSeasonStore((state) => state.setSeasonData);
   const [isValidating, setIsValidating] = useState(true);
@@ -53,6 +53,9 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
           }
           if (data.is_banned !== undefined) {
             setBannedState(data.is_banned);
+          }
+          if (data.has_unread_notifications !== undefined) {
+            setHasUnreadNotifications(data.has_unread_notifications);
           }
           updateStatus(data.picks_remaining, data.my_note_copies);
         }

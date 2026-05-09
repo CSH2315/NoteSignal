@@ -18,8 +18,8 @@ const registerSchema = z.object({
   contactType: z.enum(['instagram', 'kakao']),
   contactId: z.string().min(1, '연락처 아이디를 입력해주세요.'),
   mbti: z.string().length(4, 'MBTI 4자리를 정확히 입력해주세요.'),
-  idealType: z.string().min(10, '이상형을 10자 이상 자세히 적어주세요.').max(100, '최대 100자까지 가능합니다.'),
-  charm: z.string().min(10, '자신의 매력을 10자 이상 어필해주세요.').max(100, '최대 100자까지 가능합니다.'),
+  idealType: z.string().min(10, '이상형을 10자 이상 자세히 적어주세요.').max(50, '최대 50자까지 가능합니다.'),
+  charm: z.string().min(10, '자신의 매력을 10자 이상 어필해주세요.').max(50, '최대 50자까지 가능합니다.'),
 }).superRefine((data, ctx) => {
   if (data.contactType === 'instagram') {
     // Basic instagram handle validation (letters, numbers, periods, underscores)
@@ -171,7 +171,7 @@ export default function RegisterPage() {
       if (data && data.success) {
         // 복구 성공
         setStoreUser(data.user_id, data.gender, data.picks_remaining, data.my_note_copies);
-        toast.success('쪽지가 다시 보관함에 등록되었습니다!');
+        toast.success('쪽지가 다시 등록되었습니다!');
         navigate('/feed', { replace: true });
       } else {
         throw new Error('Restore failed on server');
@@ -226,7 +226,7 @@ export default function RegisterPage() {
           <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 space-y-5">
             {/* Nickname */}
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-1">이름 또는 닉네임</label>
+              <label className="block text-sm font-bold text-gray-700 mb-1">닉네임</label>
               <input
                 {...register('nickname')}
                 placeholder="어떻게 부르면 될까요?"
@@ -272,7 +272,7 @@ export default function RegisterPage() {
 
             {/* Age */}
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">나이 설정 (20대 통과)</label>
+              <label className="block text-sm font-bold text-gray-700 mb-2">나이 설정</label>
               <select
                 {...register('age', { valueAsNumber: true })}
                 className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-500 outline-none transition"
@@ -337,7 +337,7 @@ export default function RegisterPage() {
               <label className="block text-sm font-bold text-gray-700 mb-1">자신의 매력 포인트</label>
               <textarea
                 {...register('charm')}
-                placeholder="예: 웃는 모습이 예쁘고 배려심이 깊습니다. (최소 10자)"
+                placeholder="자기소개를 적어주세요! (10~50자)"
                 className="w-full h-24 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-500 outline-none transition resize-none"
               />
               {errors.charm && <p className="text-red-500 text-xs mt-1">{errors.charm.message}</p>}
@@ -348,7 +348,7 @@ export default function RegisterPage() {
               <label className="block text-sm font-bold text-gray-700 mb-1">이상형</label>
               <textarea
                 {...register('idealType')}
-                placeholder="예: 대화가 잘 통하고 다정한 강아지상 (최소 10자)"
+                placeholder="예: 대화가 잘 통하고 다정한 강아지상 (10~50자)"
                 className="w-full h-24 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-500 outline-none transition resize-none"
               />
               {errors.idealType && <p className="text-red-500 text-xs mt-1">{errors.idealType.message}</p>}

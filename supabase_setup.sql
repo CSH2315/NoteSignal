@@ -540,7 +540,8 @@ BEGIN
     'season_status', v_season_status,
     'is_banned', v_is_banned,
     'picks_remaining', v_user.picks_remaining,
-    'my_note_copies', v_user.my_note_copies
+    'my_note_copies', v_user.my_note_copies,
+    'has_unread_notifications', EXISTS(SELECT 1 FROM public.notifications WHERE user_id = p_uuid AND is_read = false)
   );
 END;
 $$;

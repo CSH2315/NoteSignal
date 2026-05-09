@@ -9,15 +9,15 @@ import { supabase } from '@/lib/supabase';
 import { toast } from 'react-hot-toast';
 
 const editProfileSchema = z.object({
-  nickname: z.string().min(1, '이름 또는 닉네임을 입력해주세요.').max(10, '최대 10자까지 가능합니다.'),
+  nickname: z.string().min(1, '닉네임을 입력해주세요.').max(10, '최대 10자까지 가능합니다.'),
   gender: z.enum(['male', 'female']).optional(), // 성별은 변경하지 않지만 폼에는 포함
   age: z.number().min(20, '20세 이상만 가입 가능합니다.').max(29, '20대만 가입 가능합니다.'),
   isAgeVisible: z.boolean(),
   contactType: z.enum(['instagram', 'kakao']),
   contactId: z.string().min(1, '연락처 아이디를 입력해주세요.'),
   mbti: z.string().length(4, 'MBTI 4자리를 정확히 입력해주세요.'),
-  idealType: z.string().min(10, '이상형을 10자 이상 자세히 적어주세요.').max(100, '최대 100자까지 가능합니다.'),
-  charm: z.string().min(10, '자신의 매력을 10자 이상 어필해주세요.').max(100, '최대 100자까지 가능합니다.'),
+  idealType: z.string().min(10, '이상형을 10자 이상 자세히 적어주세요.').max(50, '최대 50자까지 가능합니다.'),
+  charm: z.string().min(10, '자신의 매력을 10자 이상 어필해주세요.').max(50, '최대 50자까지 가능합니다.'),
 }).superRefine((data, ctx) => {
   if (data.contactType === 'instagram') {
     if (!/^[a-zA-Z0-9._]+$/.test(data.contactId)) {
@@ -163,7 +163,7 @@ export default function EditProfilePage() {
           <div className="bg-gray-50 p-6 rounded-3xl border border-gray-100 space-y-5">
             {/* Nickname */}
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-1">이름 또는 닉네임</label>
+              <label className="block text-sm font-bold text-gray-700 mb-1">닉네임</label>
               <input
                 {...register('nickname')}
                 placeholder="어떻게 부르면 될까요?"
@@ -258,7 +258,7 @@ export default function EditProfilePage() {
               <label className="block text-sm font-bold text-gray-700 mb-1">자신의 매력 포인트</label>
               <textarea
                 {...register('charm')}
-                placeholder="예: 웃는 모습이 예쁘고 배려심이 깊습니다. (최소 10자)"
+                placeholder="자기소개를 적어주세요! (10~50자)"
                 className="w-full h-24 px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-500 outline-none transition resize-none"
               />
               {errors.charm && <p className="text-red-500 text-xs mt-1">{errors.charm.message}</p>}
@@ -269,7 +269,7 @@ export default function EditProfilePage() {
               <label className="block text-sm font-bold text-gray-700 mb-1">이상형</label>
               <textarea
                 {...register('idealType')}
-                placeholder="예: 대화가 잘 통하고 다정한 강아지상 (최소 10자)"
+                placeholder="예: 대화가 잘 통하고 다정한 강아지상 (10~50자)"
                 className="w-full h-24 px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-500 outline-none transition resize-none"
               />
               {errors.idealType && <p className="text-red-500 text-xs mt-1">{errors.idealType.message}</p>}
