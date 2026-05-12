@@ -4,7 +4,7 @@ export function TermsOfService() {
       <div className="text-center mb-6">
         <h1 className="text-xl font-bold text-gray-900 mb-2">이용약관</h1>
         <p className="font-bold text-gray-900">NoteSignal</p>
-        <p className="text-gray-500 text-xs mt-1">시행일: 2026년 4월 28일</p>
+        <p className="text-gray-500 text-xs mt-1">시행일: 2026년 5월 17일</p>
       </div>
 
       <p>
@@ -13,7 +13,7 @@ export function TermsOfService() {
 
       <section className="space-y-3 mt-6">
         <h2 className="text-lg font-bold text-gray-900">제1조 (목적)</h2>
-        <p>본 약관은 NoteSignal(이하 "서비스")이 제공하는 소개팅 매칭 서비스의 이용과 관련하여 서비스와 이용자 간의 권리, 의무, 책임 사항 및 기타 필요한 사항을 규정함을 목적으로 합니다.</p>
+        <p>본 약관은 NoteSignal(이하 "서비스")이 제공하는 매칭 서비스의 이용과 관련하여 서비스와 이용자 간의 권리, 의무, 책임 사항 및 기타 필요한 사항을 규정함을 목적으로 합니다.</p>
       </section>
 
       <section className="space-y-3 mt-6">
@@ -217,14 +217,7 @@ export function TermsOfService() {
       </section>
 
       <section className="space-y-3 mt-6">
-        <h2 className="text-lg font-bold text-gray-900">제14조 (유료 서비스)</h2>
-        <p>현재 서비스는 무료로 제공되며, 향후 유료 기능이 도입될 경우 도입 전에 서비스 내 공지사항을 통해 안내합니다.</p>
-        <p>유료 서비스 도입 시 결제 방법, 환불 정책 등 세부 사항은 별도 공지를 통해 확정됩니다.</p>
-        <p>이용자는 유료 서비스 도입에 동의하지 않을 경우 서비스 이용을 중단하고 탈퇴할 수 있습니다.</p>
-      </section>
-
-      <section className="space-y-3 mt-6">
-        <h2 className="text-lg font-bold text-gray-900">제15조 (매칭 결과 불보장 및 서비스 한계)</h2>
+        <h2 className="text-lg font-bold text-gray-900">제14조 (매칭 결과 불보장 및 서비스 한계)</h2>
         <ul className="list-disc pl-5 space-y-1">
           <li>서비스는 이용자 간의 매칭 기회를 제공할 뿐, 매칭의 성사 또는 특정 결과를 보장하지 않습니다.</li>
           <li>서비스를 통해 이루어진 이용자 간의 만남, 연락, 관계 형성 등에서 발생하는 문제에 대해 운영자는 책임을 지지 않습니다.</li>
@@ -233,7 +226,7 @@ export function TermsOfService() {
       </section>
 
       <section className="space-y-3 mt-6">
-        <h2 className="text-lg font-bold text-gray-900">제16조 (책임의 한계 및 면책)</h2>
+        <h2 className="text-lg font-bold text-gray-900">제15조 (책임의 한계 및 면책)</h2>
         <ul className="list-disc pl-5 space-y-1">
           <li>운영자는 천재지변, 전쟁, 해킹 등 불가항력적 사유로 인한 서비스 중단에 대해 책임을 지지 않습니다.</li>
           <li>운영자는 이용자의 귀책 사유로 인한 서비스 이용 장애에 대해 책임을 지지 않습니다.</li>
@@ -244,7 +237,7 @@ export function TermsOfService() {
       </section>
 
       <section className="space-y-3 mt-6">
-        <h2 className="text-lg font-bold text-gray-900">제17조 (분쟁 해결 및 관할)</h2>
+        <h2 className="text-lg font-bold text-gray-900">제16조 (분쟁 해결 및 관할)</h2>
         <ul className="list-disc pl-5 space-y-1">
           <li>본 약관 및 서비스 이용과 관련하여 발생한 분쟁은 당사자 간 협의를 통해 해결함을 원칙으로 합니다.</li>
           <li>협의가 이루어지지 않을 경우 대한민국 법률을 준거법으로 하며, 이용자의 주소지를 관할하는 법원을 제1심 관할 법원으로 합니다.</li>
@@ -254,8 +247,8 @@ export function TermsOfService() {
       <section className="space-y-3 mt-6 pt-6 border-t border-gray-100">
         <h2 className="text-lg font-bold text-gray-900">부칙</h2>
         <ul className="mt-4 text-sm text-gray-500">
-          <li>• 공고일: 2026년 4월 29일</li>
-          <li>• 시행일: 2026년 4월 29일</li>
+          <li>• 공고일: 2026년 5월 17일</li>
+          <li>• 시행일: 2026년 5월 17일</li>
         </ul>
       </section>
       

@@ -4,7 +4,7 @@ export function PrivacyPolicy() {
       <div className="text-center mb-6">
         <h1 className="text-xl font-bold text-gray-900 mb-2">개인정보 처리방침</h1>
         <p className="font-bold text-gray-900">NoteSignal</p>
-        <p className="text-gray-500 text-xs mt-1">시행일: 2026년 4월 29일</p>
+        <p className="text-gray-500 text-xs mt-1">시행일: 2026년 5월 17일</p>
       </div>
 
       <p>
@@ -218,8 +218,8 @@ export function PrivacyPolicy() {
         <p>본 개인정보 처리방침은 법령, 정책, 보안 기술의 변경에 따라 내용이 추가·삭제·수정될 수 있습니다.</p>
         <p>처리방침이 변경될 경우 최소 7일 전에 서비스 내 공지사항을 통해 안내드립니다. 다만, 이용자 권리에 중요한 변경이 있는 경우 최소 30일 전에 안내합니다.</p>
         <ul className="mt-4 text-sm text-gray-500">
-          <li>• 공고일: 2026년 4월 29일</li>
-          <li>• 시행일: 2026년 4월 29일</li>
+          <li>• 공고일: 2026년 5월 17일</li>
+          <li>• 시행일: 2026년 5월 17일</li>
         </ul>
       </section>
       

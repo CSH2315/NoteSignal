@@ -1,9 +1,11 @@
 import { Box, ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { InventoryNoteCard } from '@/components/inventory/InventoryNoteCard';
+import { ReportModal } from '@/components/feed/ReportModal';
 
 export interface InventoryNoteItem {
-  id: string;
+  id: string;         // picks 테이블 ID
+  noteId: string;     // notes 테이블 ID (신고에 사용)
   nickname: string;
   age: number | null;
   mbti: string;
@@ -29,6 +31,7 @@ export default function InventoryPage() {
   const { uuid } = useUserStore();
   const [myPickedNotes, setMyPickedNotes] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [reportingNoteId, setReportingNoteId] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchInventory = async () => {
@@ -50,7 +53,8 @@ export default function InventoryPage() {
           const formatted = data.map((d: PickRecord) => {
             const snap: any = d.picked_snapshot;
             return {
-              id: d.id, // picks table ID
+              id: d.id,          // picks table ID
+              noteId: snap.id,   // notes table ID (신고용)
               nickname: snap.nickname,
               age: snap.is_age_visible ? snap.age : null,
               mbti: snap.mbti,
@@ -117,9 +121,20 @@ export default function InventoryPage() {
 
       <div className="space-y-4">
         {myPickedNotes.map((note: InventoryNoteItem) => (
-          <InventoryNoteCard key={note.id} note={note} />
+          <InventoryNoteCard
+            key={note.id}
+            note={note}
+            onReport={(noteId) => setReportingNoteId(noteId)}
+          />
         ))}
       </div>
+
+      {/* 신고 모달 */}
+      <ReportModal
+        isOpen={reportingNoteId !== null}
+        onClose={() => setReportingNoteId(null)}
+        noteId={reportingNoteId}
+      />
     </div>
   );
 }

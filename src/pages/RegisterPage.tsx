@@ -129,8 +129,8 @@ export default function RegisterPage() {
 
         // 서버에 등록된 DB 트리거(picks) 기본값 조회
         const { data: statusData } = await supabase.rpc('get_user_status', { p_uuid: data.user_id });
-        const picks = statusData?.picks_remaining ?? (formData.gender === 'female' ? 4 : 2);
-        const copies = statusData?.my_note_copies ?? 2;
+        const picks = statusData?.picks_remaining ?? (formData.gender === 'female' ? 3 : 2);
+        const copies = statusData?.my_note_copies ?? 3;
 
         setStoreUser(data.user_id, formData.gender as 'male' | 'female', picks, copies);
         toast.success('쪽지가 등록되었습니다!');

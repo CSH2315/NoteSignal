@@ -1,9 +1,9 @@
-import { Instagram, MessageCircle, Copy, Check } from 'lucide-react';
+import { Instagram, MessageCircle, Copy, Check, Siren } from 'lucide-react';
 import { useState } from 'react';
 
 import { InventoryNoteItem } from '@/pages/InventoryPage';
 
-export function InventoryNoteCard({ note }: { note: InventoryNoteItem }) {
+export function InventoryNoteCard({ note, onReport }: { note: InventoryNoteItem; onReport: (noteId: string) => void }) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = () => {
@@ -82,8 +82,16 @@ export function InventoryNoteCard({ note }: { note: InventoryNoteItem }) {
           </div>
         </div>
 
-        {/* Timestamp */}
-        <div className="mt-4 text-right">
+        {/* Timestamp + Report */}
+        <div className="mt-4 flex items-center justify-between">
+          <button
+            onClick={() => onReport(note.noteId)}
+            className="flex items-center gap-1 text-[10px] font-medium text-gray-300 hover:text-red-400 transition-colors"
+            aria-label="쓰지 신고하기"
+          >
+            <Siren className="w-3 h-3" />
+            <span>신고</span>
+          </button>
           <span className="text-[10px] font-medium text-gray-300">
             {new Date(note.pickedAt).toLocaleDateString()} 선택됨
           </span>

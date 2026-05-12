@@ -34,7 +34,7 @@ CREATE TABLE IF NOT EXISTS public.users (
   pin_code TEXT,                      -- Bcrypt 해싱된 4자리 PIN 저장 (시즌 초기화 시 NULL 처리)
   gender TEXT CHECK (gender IN ('male', 'female')), -- (시즌 초기화 시 NULL 처리)
   picks_remaining INTEGER,            -- 남 2, 여 4 등 가입 시 부여 (시즌 초기화 시 NULL 처리)
-  my_note_copies INTEGER NOT NULL DEFAULT 2, -- 이번 시즌 매진 횟수
+  my_note_copies INTEGER NOT NULL DEFAULT 3, -- 이번 시즌 매진 횟수
   agreed_terms BOOLEAN NOT NULL DEFAULT true,
   failed_login_attempts INTEGER NOT NULL DEFAULT 0,
   locked_until TIMESTAMP WITH TIME ZONE,
@@ -106,7 +106,7 @@ BEGIN
     IF NEW.gender = 'male' THEN
       NEW.picks_remaining := 2;
     ELSIF NEW.gender = 'female' THEN
-      NEW.picks_remaining := 4;
+      NEW.picks_remaining := 3;
     END IF;
   END IF;
   RETURN NEW;
@@ -615,5 +615,37 @@ BEGIN
   ) INTO v_exists;
   
   RETURN v_exists;
+END;
+$$;
+
+-- 15. 공지사항(Announcements) 테이블 및 조회 RPC
+-------------------------------------------------
+CREATE TABLE IF NOT EXISTS public.announcements (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  title TEXT NOT NULL,
+  message TEXT NOT NULL,
+  is_active BOOLEAN NOT NULL DEFAULT true,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+ALTER TABLE public.announcements ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Anyone can view announcements" ON public.announcements CASCADE;
+CREATE POLICY "Anyone can view announcements" ON public.announcements FOR SELECT USING (true);
+
+-- 활성 공지 1개를 조회하는 RPC (is_active=true 중 가장 최신)
+DROP FUNCTION IF EXISTS public.get_active_announcement() CASCADE;
+CREATE OR REPLACE FUNCTION public.get_active_announcement()
+RETURNS TABLE (id UUID, title TEXT, message TEXT)
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+  RETURN QUERY
+  SELECT a.id, a.title, a.message
+  FROM public.announcements a
+  WHERE a.is_active = true
+  ORDER BY a.created_at DESC
+  LIMIT 1;
 END;
 $$;
