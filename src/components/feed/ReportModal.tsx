@@ -11,9 +11,9 @@ interface ReportModalProps {
 
 const REPORT_REASONS = [
   '욕설 및 혐오 표현',
-  '스팸 및 도배',
+  '광고 또는 도배',
   '음란물 및 성적 표현',
-  '개인정보 침해',
+  '개인정보 도용, 사칭 또는 기타 침해 행위',
   '기타'
 ];
 

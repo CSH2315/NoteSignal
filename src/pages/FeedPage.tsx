@@ -8,6 +8,7 @@ import { ReportModal } from '@/components/feed/ReportModal';
 import { AlertCircle, RefreshCw } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useSeasonStore } from '@/store/useSeasonStore';
+import { AnnouncementBanner } from '@/components/common/AnnouncementBanner';
 
 // DB에서 받아올 RPC 반환 타입 수동 지정 (database.types.ts 업데이트 전 임시)
 type PublicFeedNote = {
@@ -295,6 +296,8 @@ export default function FeedPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 pb-28 pt-4">
+      {/* 공지사항 배너 (로그인 사용자 전용, 1회 표시) */}
+      <AnnouncementBanner />
       {/* 플로팅 새로고침 버튼 */}
       {seasonStatus === 'active' && picksRemaining > 0 && showRefreshBanner && (
         <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-top-10 fade-in duration-300">
