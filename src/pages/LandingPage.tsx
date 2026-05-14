@@ -77,9 +77,6 @@ export default function LandingPage() {
           transition={{ duration: 0.8, delay: 0.8, ease: "easeOut" }}
           className="flex flex-col items-center w-full"
         >
-          <p className="text-gray-500 text-sm max-w-[300px] leading-relaxed mb-8">
-            현재 테스트 운영 기간으로, 정식 오픈은 5월 13일입니다.
-          </p>
 
           {/* Action Buttons */}
           <div className="flex flex-col w-full gap-4">

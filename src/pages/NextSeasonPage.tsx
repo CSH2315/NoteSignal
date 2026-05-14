@@ -34,8 +34,8 @@ export default function NextSeasonPage() {
       </h1>
       <p className="text-gray-500 mb-8 max-w-[280px]">
         {isScheduled 
-          ? '새로운 인연이 곧 찾아옵니다. 조금만 기다려주세요!' 
-          : '다음 시즌에 다시 찾아오겠습니다. 이용해주셔서 감사합니다!'}
+          ? '조금만 기다려주세요!' 
+          : '이용해 주셔서 감사합니다. 다음이 있다면, 또 만나요!'}
       </p>
       {isScheduled && (
         <div className="p-6 bg-white rounded-2xl border border-gray-100 shadow-sm w-full max-w-sm">

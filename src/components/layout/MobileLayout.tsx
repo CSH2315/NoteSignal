@@ -21,7 +21,7 @@ export default function MobileLayout({ children }: { children: ReactNode }) {
           </div>
           <footer className="w-full text-center pb-28 pt-10 px-4 mt-auto">
             <p className="text-[11px] text-gray-400 leading-relaxed">
-              이용에 불편함 또는 문의사항이 있을 경우<br />
+              이용에 불편함 또는 문의사항이 있거나, 피드백 주실 것이 있다면<br />
               <a href="mailto:notesignaldev@gmail.com" className="font-semibold underline hover:text-brand-500 transition-colors">notesignaldev@gmail.com</a> 으로 연락바랍니다.
             </p>
             <div className="flex items-center justify-center gap-3 mt-3">
