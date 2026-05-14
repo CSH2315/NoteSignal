@@ -3,7 +3,8 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw, Wand2 } from 'lucide-react';
+import { generateNickname } from '@/lib/nicknameGenerator';
 import { TermsModal } from '@/components/register/TermsModal';
 import { RecoveryCodeModal } from '@/components/register/RecoveryCodeModal';
 import { useUserStore } from '@/store/useUserStore';
@@ -226,7 +227,17 @@ export default function RegisterPage() {
           <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 space-y-5">
             {/* Nickname */}
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-1">닉네임</label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-sm font-bold text-gray-700">닉네임</label>
+                <button
+                  type="button"
+                  onClick={() => setValue('nickname', generateNickname(), { shouldValidate: true })}
+                  className="flex items-center gap-1 text-xs font-semibold text-brand-500 hover:text-brand-600 transition-colors"
+                >
+                  <Wand2 className="w-3 h-3" />
+                  자동생성
+                </button>
+              </div>
               <input
                 {...register('nickname')}
                 placeholder="어떻게 부르면 될까요?"

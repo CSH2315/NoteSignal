@@ -3,10 +3,11 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useUserStore } from '@/store/useUserStore';
-import { ArrowLeft, CheckCircle2, AlertTriangle, Loader2 } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, AlertTriangle, Loader2, Wand2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'react-hot-toast';
+import { generateNickname } from '@/lib/nicknameGenerator';
 
 const editProfileSchema = z.object({
   nickname: z.string().min(1, '닉네임을 입력해주세요.').max(10, '최대 10자까지 가능합니다.'),
@@ -163,7 +164,17 @@ export default function EditProfilePage() {
           <div className="bg-gray-50 p-6 rounded-3xl border border-gray-100 space-y-5">
             {/* Nickname */}
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-1">닉네임</label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-sm font-bold text-gray-700">닉네임</label>
+                <button
+                  type="button"
+                  onClick={() => setValue('nickname', generateNickname(), { shouldValidate: true })}
+                  className="flex items-center gap-1 text-xs font-semibold text-brand-500 hover:text-brand-600 transition-colors"
+                >
+                  <Wand2 className="w-3 h-3" />
+                  자동생성
+                </button>
+              </div>
               <input
                 {...register('nickname')}
                 placeholder="어떻게 부르면 될까요?"
