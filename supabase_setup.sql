@@ -34,7 +34,7 @@ CREATE TABLE IF NOT EXISTS public.users (
   pin_code TEXT,                      -- Bcrypt 해싱된 4자리 PIN 저장 (시즌 초기화 시 NULL 처리)
   gender TEXT CHECK (gender IN ('male', 'female')), -- (시즌 초기화 시 NULL 처리)
   picks_remaining INTEGER,            -- 남 2, 여 4 등 가입 시 부여 (시즌 초기화 시 NULL 처리)
-  my_note_copies INTEGER NOT NULL DEFAULT 3, -- 이번 시즌 매진 횟수
+  my_note_copies INTEGER NOT NULL DEFAULT 2, -- 이번 시즌 매진 횟수 (남 2, 여 3 트리거로 부여)
   agreed_terms BOOLEAN NOT NULL DEFAULT true,
   failed_login_attempts INTEGER NOT NULL DEFAULT 0,
   locked_until TIMESTAMP WITH TIME ZONE,
@@ -97,7 +97,7 @@ CREATE TABLE IF NOT EXISTS public.notifications (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- 회원가입 시 성별에 따라 기본 picks_remaining 자동 부여 (트리거)
+-- 회원가입 시 성별에 따라 기본 picks_remaining 및 my_note_copies 자동 부여 (트리거)
 DROP FUNCTION IF EXISTS public.set_default_picks_remaining() CASCADE;
 CREATE OR REPLACE FUNCTION public.set_default_picks_remaining()
 RETURNS TRIGGER AS $$
@@ -108,6 +108,10 @@ BEGIN
     ELSIF NEW.gender = 'female' THEN
       NEW.picks_remaining := 3;
     END IF;
+  END IF;
+  -- 성별에 따라 my_note_copies도 분기 부여 (일반 DEFAULT는 남성 기준인 2)
+  IF NEW.gender = 'female' AND NEW.my_note_copies = 2 THEN
+    NEW.my_note_copies := 3;
   END IF;
   RETURN NEW;
 END;
