@@ -1,4 +1,5 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { SpeedInsights } from '@vercel/speed-insights/react';
 import MobileLayout from '@/components/layout/MobileLayout';
 import LandingPage from '@/pages/LandingPage';
 import NextSeasonPage from '@/pages/NextSeasonPage';
@@ -35,6 +36,7 @@ function App() {
           <Route path="/banned" element={<ProtectedRoute><BannedPage /></ProtectedRoute>} />
         </Routes>
       </MobileLayout>
+      <SpeedInsights />
     </Router>
   );
 }
