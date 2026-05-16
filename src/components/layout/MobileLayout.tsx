@@ -21,7 +21,7 @@ export default function MobileLayout({ children }: { children: ReactNode }) {
           </div>
           <footer className="w-full text-center pb-28 pt-10 px-4 mt-auto">
             <p className="text-[11px] text-gray-400 leading-relaxed">
-              이용에 불편함 또는 문의사항이 있거나, 피드백 주실 것이 있다면<br />
+              이용에 불편함 또는 문의사항이 있다면<br />
               <a href="mailto:notesignaldev@gmail.com" className="font-semibold underline hover:text-brand-500 transition-colors">notesignaldev@gmail.com</a> 으로 연락바랍니다.
             </p>
             <div className="flex items-center justify-center gap-3 mt-3">
@@ -38,6 +38,15 @@ export default function MobileLayout({ children }: { children: ReactNode }) {
               >
                 이용약관
               </button>
+              <span className="text-[11px] text-gray-300">|</span>
+              <a
+                href="https://docs.google.com/forms/d/e/1FAIpQLSdJr-XjNSd2w2EDEnaIcI6-eysJ-poQAvB9Yr2dtQwUe-0PnQ/viewform?usp=header"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[11px] text-gray-400 hover:text-gray-600 underline underline-offset-2 transition-colors"
+              >
+                피드백
+              </a>
             </div>
           </footer>
         </main>
