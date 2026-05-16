@@ -19,8 +19,8 @@ const registerSchema = z.object({
   contactType: z.enum(['instagram', 'kakao']),
   contactId: z.string().min(1, '연락처 아이디를 입력해주세요.'),
   mbti: z.string().length(4, 'MBTI 4자리를 정확히 입력해주세요.'),
-  idealType: z.string().min(10, '이상형을 10자 이상 자세히 적어주세요.').max(50, '최대 50자까지 가능합니다.'),
-  charm: z.string().min(10, '자신의 매력을 10자 이상 어필해주세요.').max(50, '최대 50자까지 가능합니다.'),
+  idealType: z.string().min(5, '이상형을 5자 이상 적어주세요.').max(50, '최대 50자까지 가능합니다.'),
+  charm: z.string().min(5, '자신의 매력을 5자 이상 어필해주세요.').max(50, '최대 50자까지 가능합니다.'),
 }).superRefine((data, ctx) => {
   if (data.contactType === 'instagram') {
     // Basic instagram handle validation (letters, numbers, periods, underscores)
@@ -348,7 +348,7 @@ export default function RegisterPage() {
               <label className="block text-sm font-bold text-gray-700 mb-1">자신의 매력 포인트</label>
               <textarea
                 {...register('charm')}
-                placeholder="자기소개를 적어주세요! (10~50자)"
+                placeholder="자기소개 또는 자신의 특징을 적어주세요! (5~50자)"
                 className="w-full h-24 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-500 outline-none transition resize-none"
               />
               {errors.charm && <p className="text-red-500 text-xs mt-1">{errors.charm.message}</p>}
@@ -359,7 +359,7 @@ export default function RegisterPage() {
               <label className="block text-sm font-bold text-gray-700 mb-1">이상형</label>
               <textarea
                 {...register('idealType')}
-                placeholder="예: 대화가 잘 통하고 다정한 강아지상 (10~50자)"
+                placeholder="예: 대화가 잘 통하고 다정한 강아지상 (5~50자)"
                 className="w-full h-24 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-500 outline-none transition resize-none"
               />
               {errors.idealType && <p className="text-red-500 text-xs mt-1">{errors.idealType.message}</p>}
