@@ -71,28 +71,18 @@ export function PrivacyPolicy() {
             </thead>
             <tbody className="divide-y divide-gray-200 bg-white">
               <tr>
-                <td className="px-4 py-3">회원 정보 (UUID·성별·제재 기록 제외 전체)</td>
+                <td className="px-4 py-3">회원 정보 (성별, 제재 기록 제외 전체)</td>
                 <td className="px-4 py-3 whitespace-nowrap">각 시즌 종료일로부터 2일 후 파기</td>
                 <td className="px-4 py-3">이용자 동의 및 서비스 운영 정책</td>
               </tr>
               <tr>
-                <td className="px-4 py-3">UUID, 성별, 사용자 제재 기록</td>
+                <td className="px-4 py-3">부정이용자 기록(UUID, 성별, 제재 기록)</td>
                 <td className="px-4 py-3 whitespace-nowrap">서비스 운영 기간 동안 보관</td>
                 <td className="px-4 py-3">부정 이용 방지 및 서비스 운영</td>
               </tr>
               <tr>
-                <td className="px-4 py-3">계약·청약 철회 기록</td>
-                <td className="px-4 py-3 whitespace-nowrap">5년</td>
-                <td className="px-4 py-3">전자상거래법</td>
-              </tr>
-              <tr>
-                <td className="px-4 py-3">소비자 불만·분쟁 기록</td>
-                <td className="px-4 py-3 whitespace-nowrap">3년</td>
-                <td className="px-4 py-3">전자상거래법</td>
-              </tr>
-              <tr>
                 <td className="px-4 py-3">접속 로그·IP</td>
-                <td className="px-4 py-3 whitespace-nowrap">3개월</td>
+                <td className="px-4 py-3 whitespace-nowrap">1년</td>
                 <td className="px-4 py-3">통신비밀보호법</td>
               </tr>
             </tbody>
@@ -105,9 +95,9 @@ export function PrivacyPolicy() {
         <h2 className="text-lg font-bold text-gray-900">제4조 (개인정보의 파기 절차 및 방법)</h2>
         <p>각 시즌 종료 시, 보존 의무가 없는 개인정보는 즉시 파기합니다. 파기 방법은 다음과 같습니다.</p>
         <ul className="list-disc pl-5 space-y-1">
-          <li><span className="font-semibold text-gray-800">전자적 파일:</span> 데이터베이스에서 해당 레코드를 삭제하는 방식으로 복구가 불가능하게 영구 삭제 (UUID는 제외)</li>
+          <li><span className="font-semibold text-gray-800">전자적 파일:</span> 기록을 재생할 수 없는 기술적 방법(데이터베이스 레코드 영구 삭제)을 사용하여 파기 </li>
         </ul>
-        <p>단, 관계 법령에 의해 보존이 필요한 경우에는 해당 기간 동안 분리 보관 후 파기합니다.</p>
+        <p>단, 부정이용 방지를 위한 제재 기록(UUID 포함) 및 관계 법령에 의해 보존이 필요한 로그 데이터 등은 일반 회원 정보와 분리하여 별도의 데이터베이스(또는 테이블)에서 보관 후 기간 만료 시 파기합니다.</p>
       </section>
 
       <section className="space-y-3 mt-6">
@@ -120,14 +110,15 @@ export function PrivacyPolicy() {
       </section>
 
       <section className="space-y-3 mt-6">
-        <h2 className="text-lg font-bold text-gray-900">제6조 (개인정보 처리 위탁)</h2>
+        <h2 className="text-lg font-bold text-gray-900">제6조 (개인정보 처리 위탁 및 국외 이전)</h2>
         <p>서비스는 원활한 서비스 제공을 위해 다음과 같이 개인정보 처리를 위탁합니다.</p>
         <div className="overflow-hidden rounded-lg border border-gray-200">
           <table className="min-w-full divide-y divide-gray-200 text-left text-xs">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-4 py-3 font-semibold text-gray-900">수탁업체</th>
+                <th className="px-4 py-3 font-semibold text-gray-900">수탁업체(국가)</th>
                 <th className="px-4 py-3 font-semibold text-gray-900">위탁 업무 내용</th>
+                <th className="px-4 py-3 font-semibold text-gray-900">이전 항목</th>
                 <th className="px-4 py-3 font-semibold text-gray-900">보유 및 이용 기간</th>
               </tr>
             </thead>
@@ -135,11 +126,13 @@ export function PrivacyPolicy() {
               <tr>
                 <td className="px-4 py-3 whitespace-nowrap">Supabase, Inc.</td>
                 <td className="px-4 py-3">데이터베이스 운영 및 개인정보 저장·관리</td>
+                <td className="px-4 py-3">수집된 개인정보 전량</td>
                 <td className="px-4 py-3">서비스 운영 기간 또는 위탁 계약 종료 시</td>
               </tr>
               <tr>
                 <td className="px-4 py-3 whitespace-nowrap">Vercel, Inc.</td>
                 <td className="px-4 py-3">서비스 배포 및 서버 인프라 운영</td>
+                <td className="px-4 py-3">접속 로그, IP 주소 등</td>
                 <td className="px-4 py-3">서비스 운영 기간 또는 위탁 계약 종료 시</td>
               </tr>
             </tbody>
