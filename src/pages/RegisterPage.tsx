@@ -3,10 +3,11 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { RefreshCw, Wand2 } from 'lucide-react';
+import { RefreshCw, Wand2, X } from 'lucide-react';
 import { generateNickname } from '@/lib/nicknameGenerator';
-import { TermsModal } from '@/components/register/TermsModal';
 import { RecoveryCodeModal } from '@/components/register/RecoveryCodeModal';
+import { PrivacyPolicy } from '@/components/register/PrivacyPolicy';
+import { TermsOfService } from '@/components/register/TermsOfService';
 import { useUserStore } from '@/store/useUserStore';
 import { supabase } from '@/lib/supabase';
 import toast from 'react-hot-toast';
@@ -54,10 +55,10 @@ export default function RegisterPage() {
   const restoreData = location.state as { restoreUserId: string, restoreLoginId: string, restoreGender: string } | null;
 
   // Modals & States
-  const [showTermsModal, setShowTermsModal] = useState(true);
   const [showRecoveryModal, setShowRecoveryModal] = useState(false);
   const [generatedCode, setGeneratedCode] = useState('');
   const [isRegistering, setIsRegistering] = useState(false);
+  const [legalView, setLegalView] = useState<'privacy' | 'terms' | null>(null);
 
   const {
     register,
@@ -187,34 +188,56 @@ export default function RegisterPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col pt-4 pb-20 px-6">
-      <TermsModal 
-        isOpen={showTermsModal} 
-        onAgree={() => { setShowTermsModal(false); }}
-        onClose={() => navigate('/')}
-      />
-
       <RecoveryCodeModal 
         isOpen={showRecoveryModal}
         code={generatedCode}
         onConfirm={handleRecoveryConfirm}
       />
 
-      {/* Main Registration Form - Rendered but visually hidden/blocked if terms not agreed */}
-      {!showTermsModal && (
-        <>
-        {/* Restore Mode Notification Banner */}
-        {restoreData && (
-          <div className="bg-brand-50 border border-brand-200 rounded-xl p-4 mb-6 flex items-start gap-3">
-            <RefreshCw className="w-6 h-6 text-brand-500 shrink-0 mt-0.5" />
-            <div>
-              <h3 className="font-bold text-brand-900 leading-tight mb-1">쪽지 재등록 모드</h3>
-              <p className="text-sm text-brand-700 leading-snug">
-                기존 계정({restoreData.restoreLoginId})에 보유하시던 <span className="font-bold">픽 횟수가 그대로 유지</span>됩니다. 내용을 다시 입력해주세요.
-              </p>
-            </div>
+      {/* 개인정보처리방침 풀스크린 오버레이 */}
+      {legalView === 'privacy' && (
+        <div className="fixed inset-0 bg-white z-50 flex flex-col animate-in slide-in-from-bottom duration-300">
+          <div className="flex items-center justify-between p-4 border-b">
+            <h2 className="text-lg font-bold">개인정보처리방침</h2>
+            <button onClick={() => setLegalView(null)} className="p-2" aria-label="닫기">
+              <X className="w-6 h-6" />
+            </button>
           </div>
-        )}
+          <div className="flex-1 overflow-y-auto p-4 bg-white">
+            <PrivacyPolicy />
+          </div>
+        </div>
+      )}
 
+      {/* 이용약관 풀스크린 오버레이 */}
+      {legalView === 'terms' && (
+        <div className="fixed inset-0 bg-white z-50 flex flex-col animate-in slide-in-from-bottom duration-300">
+          <div className="flex items-center justify-between p-4 border-b">
+            <h2 className="text-lg font-bold">이용약관</h2>
+            <button onClick={() => setLegalView(null)} className="p-2" aria-label="닫기">
+              <X className="w-6 h-6" />
+            </button>
+          </div>
+          <div className="flex-1 overflow-y-auto p-4 bg-white">
+            <TermsOfService />
+          </div>
+        </div>
+      )}
+
+      {/* Restore Mode Notification Banner */}
+      {restoreData && (
+        <div className="bg-brand-50 border border-brand-200 rounded-xl p-4 mb-6 flex items-start gap-3">
+          <RefreshCw className="w-6 h-6 text-brand-500 shrink-0 mt-0.5" />
+          <div>
+            <h3 className="font-bold text-brand-900 leading-tight mb-1">쪽지 재등록 모드</h3>
+            <p className="text-sm text-brand-700 leading-snug">
+              기존 계정({restoreData.restoreLoginId})에 보유하시던 <span className="font-bold">픽 횟수가 그대로 유지</span>됩니다. 내용을 다시 입력해주세요.
+            </p>
+          </div>
+        </div>
+      )}
+
+      <>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 animate-in fade-in duration-500">
           <div>
             <h1 className="text-2xl font-bold text-gray-900 leading-tight">
@@ -366,6 +389,27 @@ export default function RegisterPage() {
             </div>
           </div>
 
+          {/* 동의 문구 */}
+          <p className="text-center text-[11px] text-gray-400 leading-relaxed px-2">
+            '쪽지 등록 완료' 버튼을 누르면{' '}
+            <button
+              type="button"
+              onClick={() => setLegalView('terms')}
+              className="underline underline-offset-2 hover:text-gray-600 transition-colors"
+            >
+              이용약관
+            </button>
+            {' '}및{' '}
+            <button
+              type="button"
+              onClick={() => setLegalView('privacy')}
+              className="underline underline-offset-2 hover:text-gray-600 transition-colors"
+            >
+              개인정보처리방침
+            </button>
+            에 동의하는 것으로 간주합니다.
+          </p>
+
           <button
             type="submit"
             disabled={isSubmitting || isRegistering}
@@ -374,8 +418,7 @@ export default function RegisterPage() {
             {isSubmitting || isRegistering ? '등록 중...' : '쪽지 등록 완료'}
           </button>
         </form>
-        </>
-      )}
+      </>
     </div>
   );
 }
