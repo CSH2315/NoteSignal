@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { SpeedInsights } from '@vercel/speed-insights/react';
+import { Analytics } from '@vercel/analytics/react';
 import MobileLayout from '@/components/layout/MobileLayout';
 import LandingPage from '@/pages/LandingPage';
 import NextSeasonPage from '@/pages/NextSeasonPage';
@@ -37,6 +38,7 @@ function App() {
         </Routes>
       </MobileLayout>
       <SpeedInsights />
+      <Analytics />
     </Router>
   );
 }
