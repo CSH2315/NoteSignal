@@ -27,7 +27,7 @@ export function PrivacyPolicy() {
             <tbody className="divide-y divide-gray-200 bg-white">
               <tr>
                 <td className="px-4 py-3 font-medium text-gray-900 whitespace-nowrap">필수</td>
-                <td className="px-4 py-3">닉네임, 연령, 성별, 인스타그램 또는 카카오톡 아이디 중 하나, 이상형, 자신의 매력, MBTI</td>
+                <td className="px-4 py-3">닉네임, 연령, 성별, 인스타그램 또는 카카오톡 아이디 중 하나, 이상형, 특징, MBTI</td>
                 <td className="px-4 py-3">회원가입 시 이용자 직접 입력</td>
               </tr>
               <tr>
@@ -39,7 +39,7 @@ export function PrivacyPolicy() {
           </table>
         </div>
         <ul className="list-disc pl-5 space-y-1 text-xs text-gray-500">
-          <li>매칭 서비스의 특성상 수집된 모든 항목(닉네임, 성별, 이상형, 매력, MBTI)은 다른 이용자에게 공개됩니다.</li>
+          <li>매칭 서비스의 특성상 수집된 모든 항목(닉네임, 성별, 이상형, 특징, MBTI)은 다른 이용자에게 공개됩니다.</li>
           <li>단, 연령은 이용자가 서비스 내 설정에서 공개 여부를 직접 선택할 수 있습니다.</li>
           <li>인스타그램 또는 카카오톡 아이디는 해당 이용자를 직접 선택한 이용자에게만 공개됩니다.</li>
         </ul>

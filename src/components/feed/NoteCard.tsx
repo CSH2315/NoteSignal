@@ -69,7 +69,7 @@ export function NoteCard({ note, isSelected, onSelect, onReport }: NoteCardProps
       {/* Body: Charm & Ideal Type */}
       <div className="space-y-4 flex-1 pb-4">
         <div>
-          <span className="block text-xs font-bold text-gray-400 mb-1">자신의 매력</span>
+          <span className="block text-xs font-bold text-gray-400 mb-1">특징</span>
           <p className="text-sm text-gray-700 leading-relaxed line-clamp-4">
             {note.charm}
           </p>

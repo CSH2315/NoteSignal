@@ -131,7 +131,7 @@ export default function ProfilePage() {
               </p>
             </div>
             <div>
-              <span className="block text-xs font-bold text-gray-400 mb-1.5">자신의 매력</span>
+              <span className="block text-xs font-bold text-gray-400 mb-1.5">특징</span>
               <p className="text-sm text-gray-700 leading-relaxed bg-gray-50 py-3 px-3 rounded-xl border border-gray-100/50">
                 {profile.charm}
               </p>

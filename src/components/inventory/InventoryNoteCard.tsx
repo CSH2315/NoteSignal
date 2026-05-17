@@ -69,7 +69,7 @@ export function InventoryNoteCard({ note, onReport }: { note: InventoryNoteItem;
         {/* Row 2: Charms & Ideals (Reduced visual weight since contact is priority) */}
         <div className="grid grid-cols-2 gap-4 mt-2">
           <div className="bg-gray-50 rounded-2xl p-3 border border-gray-100/50">
-            <span className="block text-[10px] font-bold text-gray-400 mb-1">자신의 매력</span>
+            <span className="block text-[10px] font-bold text-gray-400 mb-1">특징</span>
             <p className="text-xs text-gray-600 leading-relaxed font-medium">
               {note.charm}
             </p>
