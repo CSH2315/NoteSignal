@@ -188,6 +188,16 @@ export default function RegisterPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col pt-4 pb-20 px-6">
+      <div className="mb-6 flex">
+        <button 
+          type="button"
+          onClick={() => navigate('/')}
+          className="text-2xl font-extrabold text-gray-900 tracking-tight hover:opacity-80 transition-opacity text-left"
+        >
+          Note<span className="text-brand-500">Signal</span>
+        </button>
+      </div>
+
       <RecoveryCodeModal 
         isOpen={showRecoveryModal}
         code={generatedCode}
