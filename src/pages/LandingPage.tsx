@@ -66,7 +66,7 @@ export default function LandingPage() {
             Note<span className="text-brand-500">Signal</span>
           </h1>
           <p className="text-gray-600 text-base sm:text-lg md:text-xl font-medium max-w-[280px]">
-            쪽지 한 장으로 시작되는 20대의 연애
+            대학 축제 시즌 온라인 소개팅 부스
           </p>
         </motion.div>
 
