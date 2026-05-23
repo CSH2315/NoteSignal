@@ -273,6 +273,8 @@ export default function FeedPage() {
   if (picksRemaining <= 0 && !isCompleteModalOpen) {
     return (
       <div className="min-h-screen bg-gray-50 pb-28 pt-4 flex flex-col justify-between">
+        {/* 공지사항 배너는 열람 기회 소진 상태에서도 항상 표시 */}
+        <AnnouncementBanner />
         <div className="flex flex-col items-center justify-center flex-1 px-6 text-center mt-12">
           <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-6">
             <AlertCircle className="w-8 h-8 text-gray-400" />
