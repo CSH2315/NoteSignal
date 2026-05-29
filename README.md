@@ -49,7 +49,7 @@ NoteSignal은 간단한 **쪽지(노트) 하나로 소개팅을 시작**하는 �
 - **Race Condition 방어**: DB 레벨 Row Lock으로 동시 선택 충돌 방지
 - **공지사항 배너**: 운영자가 Supabase에서 직접 공지 등록 및 비활성화 가능
 - **신고 시스템**: 부적절한 쪽지 신고 및 제재 관리
-- **시즌 상태 관리**: `pre_registration` → `active` → `retention` → `completed`
+- **시즌 상태 관리**: `scheduled` → `pre_registration` → `active` → `retention` → `completed`
 
 ---
 
@@ -102,7 +102,7 @@ Supabase 대시보드의 **SQL Editor**에서 아래 파일들을 순서대로 �
 
 ### 공지사항 등록 방법
 
-운영자가 Supabase SQL Editor에서 직접 실행합니다:
+운영자가 Supabase SQL Editor에서 직접 실행하거나, Supabase Table Editor에서 직접 입력합니다:
 
 ```sql
 -- 공지 등록
@@ -171,3 +171,5 @@ NoteSignal은 Supabase Auth를 사용하지 않는 **커스텀 인증 시스템*
 ## 📮 문의
 
 서비스 관련 문의: **notesignaldev@gmail.com**
+
+인스타그램: **@note.signal**
