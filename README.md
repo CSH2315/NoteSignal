@@ -166,10 +166,4 @@ NoteSignal은 Supabase Auth를 사용하지 않는 **커스텀 인증 시스템*
 - 비밀번호 해싱: pgcrypto (`crypt` + `gen_salt('bf')`)
 - 세션 상태: Zustand `persist`로 로컬 스토리지에 유지
 
----
 
-## 📮 문의
-
-서비스 관련 문의: **notesignaldev@gmail.com**
-
-인스타그램: **@note.signal**
